@@ -26,7 +26,6 @@ build/
 
 # Project specific
 escenarios/
-simulation_notebook.py
 
 # Jupyter Notebook
 .ipynb_checkpoints
