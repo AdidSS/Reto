@@ -93,7 +93,8 @@ Borrar dist\ build\
 
 pip install pyinstaller
 pyinstaller optipro.spec
-# No ejecutar: pyinstaller --onefile --name optipro --add-data "img;img" --icon="img/optipro.ico" --windowed app.py
+
+(No ejecutar: pyinstaller --onefile --name optipro --add-data "img;img" --icon="img/optipro.ico" --windowed app.py)
 
 ## Desarrollado por
 
