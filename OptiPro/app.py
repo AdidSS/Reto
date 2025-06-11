@@ -8,6 +8,8 @@ from app_ui import DialogoAcerca, SeccionContenido, ColoresUI
 import simulation_function as sim
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import app_graficas as graficas
+import app_tablas as tablas
 import numpy as np
 import shutil
 
@@ -174,7 +176,7 @@ class Aplicacion(ctk.CTk):
 
         self.boton_seccion2 = ctk.CTkButton(
             self.frame_botones,
-            text="Inventario",
+            text="Pedidos",
             image=self.imagen_seccion2,
             compound="left",
             anchor="w",
@@ -190,7 +192,7 @@ class Aplicacion(ctk.CTk):
 
         self.boton_seccion3 = ctk.CTkButton(
             self.frame_botones,
-            text="Rutas",
+            text="Inventario",
             image=self.imagen_seccion3,
             compound="left",
             anchor="w",
@@ -203,6 +205,38 @@ class Aplicacion(ctk.CTk):
             state="disabled",  # Inicialmente deshabilitado
         )
         self.boton_seccion3.grid(row=2, column=0, pady=5, sticky="ew", padx=0)
+
+        self.boton_seccion4 = ctk.CTkButton(
+            self.frame_botones,
+            text="Rutas",
+            image=self.imagen_seccion4,
+            compound="left",
+            anchor="w",
+            height=40,
+            corner_radius=0,
+            command=self.mostrar_seccion4,
+            fg_color=self.color_inactivo,
+            hover_color=self.color_hover,
+            text_color=self.color_texto_menu,
+            state="disabled",  # Inicialmente deshabilitado
+        )
+        self.boton_seccion4.grid(row=3, column=0, pady=5, sticky="ew", padx=0)
+
+        self.boton_seccion5 = ctk.CTkButton(
+            self.frame_botones,
+            text="Costos",
+            image=self.imagen_seccion5,
+            compound="left",
+            anchor="w",
+            height=40,
+            corner_radius=0,
+            command=self.mostrar_seccion5,
+            fg_color=self.color_inactivo,
+            hover_color=self.color_hover,
+            text_color=self.color_texto_menu,
+            state="disabled",  # Inicialmente deshabilitado
+        )
+        self.boton_seccion5.grid(row=4, column=0, pady=5, sticky="ew", padx=0)
 
         # Botón Acerca de la Aplicación
         self.boton_seccion9 = ctk.CTkButton(
@@ -219,7 +253,7 @@ class Aplicacion(ctk.CTk):
             anchor="w",
             command=self.mostrar_acerca,
         )
-        self.boton_seccion9.grid(row=3, column=0, pady=0, sticky="ew", padx=0)
+        self.boton_seccion9.grid(row=5, column=0, pady=0, sticky="ew", padx=0)
 
         # Barra de colapso (usando Label en lugar de Button)
         self.barra_colapso = ctk.CTkLabel(
@@ -250,6 +284,8 @@ class Aplicacion(ctk.CTk):
             "seccion1": self.boton_seccion1,
             "seccion2": self.boton_seccion2,
             "seccion3": self.boton_seccion3,
+            "seccion4": self.boton_seccion4,
+            "seccion5": self.boton_seccion5,
         }
 
         # Inicializar secciones de contenido
@@ -262,15 +298,15 @@ class Aplicacion(ctk.CTk):
     # === ÁREA: CARGA DE RECURSOS E IMÁGENES ===
     def cargar_imagenes(self):
         """Carga todos los recursos de imágenes necesarios para la interfaz"""
-        
+
         archivo = resource_path("img/logo1.png")
-        self.logo_expandido = ctk.CTkImage(            
+        self.logo_expandido = ctk.CTkImage(
             light_image=Image.open(archivo),
             dark_image=Image.open(archivo),
             size=(160, 80),  # Tamaño para modo expandido
         )
         archivo = resource_path("img/logo2.png")
-        self.logo_colapsado = ctk.CTkImage(            
+        self.logo_colapsado = ctk.CTkImage(
             light_image=Image.open(archivo),
             dark_image=Image.open(archivo),
             size=(64, 80),  # Tamaño cuadrado para modo colapsado
@@ -289,6 +325,18 @@ class Aplicacion(ctk.CTk):
         )
         archivo = resource_path("img/seccion3.png")
         self.imagen_seccion3 = ctk.CTkImage(
+            light_image=Image.open(archivo),
+            dark_image=Image.open(archivo),
+            size=(24, 24),
+        )
+        archivo = resource_path("img/seccion4.png")
+        self.imagen_seccion4 = ctk.CTkImage(
+            light_image=Image.open(archivo),
+            dark_image=Image.open(archivo),
+            size=(24, 24),
+        )
+        archivo = resource_path("img/seccion5.png")
+        self.imagen_seccion5 = ctk.CTkImage(
             light_image=Image.open(archivo),
             dark_image=Image.open(archivo),
             size=(24, 24),
@@ -320,6 +368,8 @@ class Aplicacion(ctk.CTk):
             self.boton_seccion1.configure(text="", image=self.imagen_seccion1)
             self.boton_seccion2.configure(text="", image=self.imagen_seccion2)
             self.boton_seccion3.configure(text="", image=self.imagen_seccion3)
+            self.boton_seccion4.configure(text="", image=self.imagen_seccion4)
+            self.boton_seccion5.configure(text="", image=self.imagen_seccion5)
             self.boton_seccion9.configure(text="", image=self.imagen_seccion9)
 
             # Ajustar logo en modo colapsado
@@ -334,8 +384,10 @@ class Aplicacion(ctk.CTk):
 
             # Restaurar botones expandidos
             self.boton_seccion1.configure(text="Demanda", image=self.imagen_seccion1)
-            self.boton_seccion2.configure(text="Inventario", image=self.imagen_seccion2)
-            self.boton_seccion3.configure(text="Rutas", image=self.imagen_seccion3)
+            self.boton_seccion2.configure(text="Pedidos", image=self.imagen_seccion2)
+            self.boton_seccion3.configure(text="Inventario", image=self.imagen_seccion3)
+            self.boton_seccion4.configure(text="Rutas", image=self.imagen_seccion4)
+            self.boton_seccion5.configure(text="Costos", image=self.imagen_seccion5)
             self.boton_seccion9.configure(text="Info", image=self.imagen_seccion9)
 
             # Restaurar logo expandido
@@ -367,13 +419,25 @@ class Aplicacion(ctk.CTk):
         )
         self.secciones["seccion2"] = SeccionContenido(
             self.marco_principal,
-            "Inventario",
+            "Pedidos",
             self.color_fondo_contenido,
             self.color_titulo,
         )
         self.secciones["seccion3"] = SeccionContenido(
             self.marco_principal,
+            "Inventario",
+            self.color_fondo_contenido,
+            self.color_titulo,
+        )
+        self.secciones["seccion4"] = SeccionContenido(
+            self.marco_principal,
             "Rutas",
+            self.color_fondo_contenido,
+            self.color_titulo,
+        )
+        self.secciones["seccion5"] = SeccionContenido(
+            self.marco_principal,
+            "Costos",
             self.color_fondo_contenido,
             self.color_titulo,
         )
@@ -497,6 +561,7 @@ class Aplicacion(ctk.CTk):
                 seccion.actualizar_estado("Selecciona un archivo Excel")
 
         # Configurar sección 1 (Demanda)
+        # ------------------------------------------------------------------------
         seccion = self.secciones["seccion1"]
 
         # Actualizar subtítulo
@@ -516,8 +581,30 @@ class Aplicacion(ctk.CTk):
             text_color="gray60",
         ).place(relx=0.5, rely=0.5, anchor="center")
 
-        # Configurar sección 2 (Inventario)
+        # Configurar sección 2 (Pedidos)
+        # ------------------------------------------------------------------------
         seccion = self.secciones["seccion2"]
+
+        # Actualizar subtítulo
+        seccion.etiqueta_subtitulo.configure(
+            text="Planificación y optimización de pedidos"
+        )
+
+        # Crear frame para la gráfica
+        frame_grafica = ctk.CTkFrame(seccion.panel_contenido, fg_color="white")
+        frame_grafica.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+
+        # Mensaje inicial
+        ctk.CTkLabel(
+            frame_grafica,
+            text="Ejecute la optimización para ver los resultados",
+            font=ctk.CTkFont(size=16),
+            text_color="gray60",
+        ).place(relx=0.5, rely=0.5, anchor="center")
+
+        # Configurar sección 3 (Inventario)
+        # ------------------------------------------------------------------------
+        seccion = self.secciones["seccion3"]
 
         # Actualizar subtítulo
         seccion.etiqueta_subtitulo.configure(
@@ -536,8 +623,9 @@ class Aplicacion(ctk.CTk):
             text_color="gray60",
         ).place(relx=0.5, rely=0.5, anchor="center")
 
-        # Configurar sección 3 (Rutas)
-        seccion = self.secciones["seccion3"]
+        # Configurar sección 4 (Rutas)
+        # ------------------------------------------------------------------------
+        seccion = self.secciones["seccion4"]
 
         # Actualizar subtítulo
         seccion.etiqueta_subtitulo.configure(
@@ -545,67 +633,88 @@ class Aplicacion(ctk.CTk):
         )
 
         # Crear frame para la gráfica
-        self.frame_rutas = ctk.CTkFrame(seccion.panel_contenido, fg_color="white")
-        self.frame_rutas.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+        frame_grafica = ctk.CTkFrame(seccion.panel_contenido, fg_color="white")
+        frame_grafica.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
 
         # Mensaje inicial
         ctk.CTkLabel(
-            self.frame_rutas,
+            frame_grafica,
             text="Ejecute la optimización para ver los resultados",
             font=ctk.CTkFont(size=16),
             text_color="gray60",
         ).place(relx=0.5, rely=0.5, anchor="center")
 
+        # Configurar sección 5 (Costos)
+        # ------------------------------------------------------------------------
+        seccion = self.secciones["seccion5"]
+
+        # Actualizar subtítulo
+        seccion.etiqueta_subtitulo.configure(text="Visión a Futuro de Gastos")
+
+        # Crear frame para la gráfica
+        frame_grafica = ctk.CTkFrame(seccion.panel_contenido, fg_color="white")
+        frame_grafica.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+
+        # Mensaje inicial
+        ctk.CTkLabel(
+            frame_grafica,
+            text="Ejecute la optimización para ver los resultados",
+            font=ctk.CTkFont(size=16),
+            text_color="gray60",
+        ).place(relx=0.5, rely=0.5, anchor="center")
+
+        # -----------------------
+
         # Configurar el grid del panel de contenido
         seccion.panel_contenido.grid_rowconfigure(0, weight=1)
         seccion.panel_contenido.grid_columnconfigure(0, weight=1)
 
-        # Crear frame para controles de navegación en el panel superior
-        frame_controles = ctk.CTkFrame(
-            seccion.marco_notificaciones, fg_color="transparent"
-        )
-        frame_controles.grid(row=0, column=0, sticky="e")
+        # # Crear frame para controles de navegación en el panel superior
+        # frame_controles = ctk.CTkFrame(
+        #     seccion.marco_notificaciones, fg_color="transparent"
+        # )
+        # frame_controles.grid(row=0, column=0, sticky="e")
 
-        # Botón anterior
-        self.btn_anterior = ctk.CTkButton(
-            frame_controles,
-            text="← Anterior",
-            command=self.dia_anterior,
-            width=80,
-            height=24,
-            fg_color=self.color_inactivo,
-            hover_color=self.color_hover,
-            font=ctk.CTkFont(size=12),
-            state="disabled",
-        )
-        self.btn_anterior.grid(row=0, column=0, padx=5)
+        # # Botón anterior
+        # self.btn_anterior = ctk.CTkButton(
+        #     frame_controles,
+        #     text="← Anterior",
+        #     command=self.dia_anterior,
+        #     width=80,
+        #     height=24,
+        #     fg_color=self.color_inactivo,
+        #     hover_color=self.color_hover,
+        #     font=ctk.CTkFont(size=12),
+        #     state="disabled",
+        # )
+        # self.btn_anterior.grid(row=0, column=0, padx=5)
 
-        # Etiqueta del día actual
-        self.lbl_dia = ctk.CTkLabel(
-            frame_controles,
-            text="Día -",
-            font=ctk.CTkFont(size=13, weight="bold"),
-            text_color=self.color_titulo,
-        )
-        self.lbl_dia.grid(row=0, column=1, padx=10)
+        # # Etiqueta del día actual
+        # self.lbl_dia = ctk.CTkLabel(
+        #     frame_controles,
+        #     text="Día -",
+        #     font=ctk.CTkFont(size=13, weight="bold"),
+        #     text_color=self.color_titulo,
+        # )
+        # self.lbl_dia.grid(row=0, column=1, padx=10)
 
-        # Botón siguiente
-        self.btn_siguiente = ctk.CTkButton(
-            frame_controles,
-            text="Siguiente →",
-            command=self.dia_siguiente,
-            width=80,
-            height=24,
-            fg_color=self.color_inactivo,
-            hover_color=self.color_hover,
-            font=ctk.CTkFont(size=12),
-            state="disabled",
-        )
-        self.btn_siguiente.grid(row=0, column=2, padx=5)
+        # # Botón siguiente
+        # self.btn_siguiente = ctk.CTkButton(
+        #     frame_controles,
+        #     text="Siguiente →",
+        #     command=self.dia_siguiente,
+        #     width=80,
+        #     height=24,
+        #     fg_color=self.color_inactivo,
+        #     hover_color=self.color_hover,
+        #     font=ctk.CTkFont(size=12),
+        #     state="disabled",
+        # )
+        # self.btn_siguiente.grid(row=0, column=2, padx=5)
 
-        # Inicializar variables de control
-        self.dia_actual = 0
-        self.total_dias = 0
+        # # Inicializar variables de control
+        # self.dia_actual = 0
+        # self.total_dias = 0
 
     def dia_anterior(self):
         """Navega al día anterior"""
@@ -677,6 +786,14 @@ class Aplicacion(ctk.CTk):
         """Muestra el contenido de la sección 3"""
         self.mostrar_seccion("seccion3")
 
+    def mostrar_seccion4(self):
+        """Muestra el contenido de la sección 4"""
+        self.mostrar_seccion("seccion4")
+
+    def mostrar_seccion5(self):
+        """Muestra el contenido de la sección 5"""
+        self.mostrar_seccion("seccion5")
+
     def mostrar_inicio(self):
         """Muestra la sección de inicio"""
         self.mostrar_seccion("inicio")
@@ -713,17 +830,19 @@ class Aplicacion(ctk.CTk):
                 self.simulation_data = sim.run_simulation_external(self.excel_file)
 
                 # Mostrar los mensajes acumulados
-                for line in sim.console_messages:
-                    self.consola.insert(tk.END, line)
+                # for line in sim.console_messages:
+                #     self.consola.insert(tk.END, line)
                 self.consola.see(tk.END)  # Scroll al final
 
                 # Habilitar botones
                 self.boton_seccion1.configure(state="normal")
                 self.boton_seccion2.configure(state="normal")
                 self.boton_seccion3.configure(state="normal")
+                self.boton_seccion4.configure(state="normal")
+                self.boton_seccion5.configure(state="normal")
 
                 # Actualizar gráficas pero sin cambiar de sección
-                self.actualizar_graficas()
+                self.actualizar_secciones()
 
                 # Actualizar estado de los botones después de optimizar
                 self.btn_optimizar.configure(
@@ -751,47 +870,247 @@ class Aplicacion(ctk.CTk):
             finally:
                 self.simulation_running = False
 
-    def actualizar_graficas(self):
-        """Actualiza las gráficas con los resultados de la simulación"""
+    def actualizar_secciones(self):
+        """Actualiza las secciones con los resultados de la simulación"""
         if self.simulation_data:
+
+            # Obtenemos Datos Comunes
+
+            # Obtenemos Lista Especies
+            self.lst_nombres_especies = self.simulation_data["lst_nombres_especies"]
+
+            # Obtenemos DF Cobertura Demanda
+            self.df_cobertura_demanda = self.simulation_data["df_cobertura_demanda"]
+
+            # Obtenemos Diccionario de Polígonos
+            dict_poligonos = self.simulation_data["dict_poligonos"]
+            self.lst_poligonos = [0]
+            for item in dict_poligonos:
+                self.lst_poligonos.append(item)
+
+            # Obtenemos Inventario Diario
+            self.df_inventario_diario = self.simulation_data["df_inventario_diario"]
+
+            # Obtenemos Pedidos
+            self.df_pedidos = self.simulation_data["df_pedidos"]
+
+            # Obtenemos Costos
+            self.df_costos_solucion = self.simulation_data["df_costos_solucion"]
+
+            # Obtenemos Rutas
+            self.df_rutas = self.simulation_data["df_rutas"]
+
             # Actualizar sección 1 (Demanda)
+            # #############################################################################################
+
             seccion = self.secciones["seccion1"]
             for widget in seccion.panel_contenido.winfo_children():
                 widget.destroy()
 
-            frame_grafica = ctk.CTkFrame(seccion.panel_contenido, fg_color="white")
-            frame_grafica.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+            # Creamos Frame Contenido
+            self.frame_contenido_secc_1 = ctk.CTkFrame(
+                seccion.panel_contenido, fg_color="white"
+            )
+            self.frame_contenido_secc_1.grid(
+                row=0, column=0, sticky="nsew", padx=20, pady=20
+            )
 
-            fig_demanda = self.simulation_data["fig_demanda"]
-            canvas = FigureCanvasTkAgg(fig_demanda, frame_grafica)
-            canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+            # Selector Especies
+            secc1_especie_var = tk.StringVar(self.frame_contenido_secc_1, value="None")
+            secc1_especie_frame = ttk.LabelFrame(
+                self.frame_contenido_secc_1, text="Seleccionar Especie"
+            )
+            secc1_especie_frame.pack(padx=10, pady=5, fill="x")
+            for i, especie in enumerate(self.lst_nombres_especies):
+                rb = ttk.Radiobutton(
+                    secc1_especie_frame,
+                    text=especie,
+                    variable=secc1_especie_var,
+                    value=especie,
+                    command=lambda e=especie: graficas.secc_01_on_especie_select(
+                        self, e
+                    ),
+                )
+                # Place each radio button in the same row, but a different column
+                rb.grid(
+                    row=0, column=i, padx=5, pady=5
+                )  # padx/pady for spacing between buttons
+            # Valores iniciales
+            self.secc1_especie_actual = self.lst_nombres_especies[0]
 
-            # Actualizar sección 2 (Inventario)
+            # Selector Polígonos
+            secc1_poligono_var = tk.StringVar(self.frame_contenido_secc_1, value="None")
+            secc1_poligono_frame = ttk.LabelFrame(
+                self.frame_contenido_secc_1, text="Seleccionar Polígono"
+            )
+            secc1_poligono_frame.pack(padx=10, pady=5, fill="x")
+            for i, poligono in enumerate(self.lst_poligonos):
+                rb = ttk.Radiobutton(
+                    secc1_poligono_frame,
+                    text=poligono,
+                    variable=secc1_poligono_var,
+                    value=poligono,
+                    command=lambda p=poligono: graficas.secc_01_on_poligono_select(
+                        self, p
+                    ),
+                )
+                # Place each radio button in the same row, but a different column
+                rb.grid(row=0, column=i, padx=5, pady=5)
+            # Falores iniciales
+            self.poligono_actual = None  # Todos
+
+            # Mostramos gráfica
+            self.canvas_01_demanda = None
+            graficas.secc_01_muestra_grafica(self)
+
+            # Actualizar sección 2 (Pedidos)
+            # #############################################################################################
+
             seccion = self.secciones["seccion2"]
             for widget in seccion.panel_contenido.winfo_children():
                 widget.destroy()
 
-            frame_grafica = ctk.CTkFrame(seccion.panel_contenido, fg_color="white")
-            frame_grafica.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+            # Creamos Frame Contenido
+            self.frame_contenido_secc_2 = ctk.CTkFrame(
+                seccion.panel_contenido, fg_color="white"
+            )
+            self.frame_contenido_secc_2.grid(
+                row=0, column=0, sticky="nsew", padx=20, pady=20
+            )
 
-            fig_inventario = self.simulation_data["fig_inventario"]
-            canvas = FigureCanvasTkAgg(fig_inventario, frame_grafica)
-            canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+            # Selector Por
+            secc2_vista_var = tk.StringVar(self.frame_contenido_secc_2, value="None")
+            secc2_vista_frame = ttk.LabelFrame(
+                self.frame_contenido_secc_2, text="Seleccionar Vista"
+            )
+            secc2_vista_frame.pack(padx=10, pady=5, fill="x")
+            for i, vista in enumerate(["especie", "proveedor"]):
+                rb = ttk.Radiobutton(
+                    secc2_vista_frame,
+                    text=vista,
+                    variable=secc2_vista_var,
+                    value=vista,
+                    command=lambda v=vista: graficas.secc_02_on_vista_select(self, v),
+                )
+                # Place each radio button in the same row, but a different column
+                rb.grid(
+                    row=0, column=i, padx=5, pady=5
+                )  # padx/pady for spacing between buttons
+            # Valores iniciales
+            self.secc2_vista_actual = "especie"
 
-            # Actualizar sección 3 (Rutas)
+            # Mostramos gráfica
+            self.canvas_02_pedidos = None
+            graficas.secc_02_muestra_grafica(self)
+
+            # Mostramos tabla
+            # secc2_tabla_frame = ttk.LabelFrame(
+            #     self.frame_contenido_secc_2, text="Datos"
+            # )
+            # secc2_tabla_frame.pack(padx=10, pady=5, fill="x")            
+            # tablas.mostrar_dataframe_en_tkinter(self.df_pedidos, secc2_tabla_frame)
+
+
+            # Actualizar sección 3 (Inventario)
+            # #############################################################################################
+
             seccion = self.secciones["seccion3"]
             for widget in seccion.panel_contenido.winfo_children():
                 widget.destroy()
 
-            self.frame_rutas = ctk.CTkFrame(seccion.panel_contenido, fg_color="white")
-            self.frame_rutas.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+            # Creamos Frame Contenido
+            self.frame_contenido_secc_3 = ctk.CTkFrame(
+                seccion.panel_contenido, fg_color="white"
+            )
+            self.frame_contenido_secc_3.grid(
+                row=0, column=0, sticky="nsew", padx=20, pady=20
+            )
 
-            self.fig_rutas = self.simulation_data["fig_rutas"]
-            self.total_dias = len(self.fig_rutas)
-            self.dia_actual = 0
-            self.mostrar_ruta_actual()
+            # Selector Especies
+            secc3_especie_var = tk.StringVar(self.frame_contenido_secc_3, value="None")
+            secc3_especie_frame = ttk.LabelFrame(
+                self.frame_contenido_secc_3, text="Seleccionar Especie"
+            )
+            secc3_especie_frame.pack(padx=10, pady=5, fill="x")
+            for i, especie in enumerate(self.lst_nombres_especies):
+                rb = ttk.Radiobutton(
+                    secc3_especie_frame,
+                    text=especie,
+                    variable=secc3_especie_var,
+                    value=especie,
+                    command=lambda e=especie: graficas.secc_03_on_especie_select(
+                        self, e
+                    ),
+                )
+                # Place each radio button in the same row, but a different column
+                rb.grid(
+                    row=0, column=i, padx=5, pady=5
+                )  # padx/pady for spacing between buttons
+            # Valores iniciales
+            self.secc3_especie_actual = self.lst_nombres_especies[0]
+
+            # Mostramos gráfica
+            self.canvas_03_inventario = None
+            graficas.secc_03_muestra_grafica(self)
+
+            # Actualizar sección 4 (Rutas)
+            # #############################################################################################
+
+            seccion = self.secciones["seccion4"]
+            for widget in seccion.panel_contenido.winfo_children():
+                widget.destroy()
+
+            # Creamos Frame Contenido
+            self.frame_contenido_secc_4 = ctk.CTkFrame(
+                seccion.panel_contenido, fg_color="white"
+            )
+            self.frame_contenido_secc_4.grid(
+                row=0, column=0, sticky="nsew", padx=20, pady=20
+            )
+
+            # Selector Día
+            self.secc4_dia_var = tk.IntVar(value=1)
+            self.secc4_dia_var.trace_add(
+                "write",
+                lambda name, index, mode: graficas.secc_04_on_dia_select(self, None),
+            )
+
+            secc4_dia_frame = ttk.LabelFrame(
+                self.frame_contenido_secc_4, text="Seleccionar Día:"
+            )
+            secc4_dia_frame.pack(padx=10, pady=5, fill="x")
+            secc4_dia_spinbox = ttk.Spinbox(
+                secc4_dia_frame,
+                from_=1,  # Minimum value
+                to=31,  # Maximum value
+                textvariable=self.secc4_dia_var,  # Link to a Tkinter variable
+                wrap=True,  # If True, increments/decrements wrap around (e.g., 31 to 1)
+                width=5,  # Adjust width as needed
+            )
+            secc4_dia_spinbox.grid(row=0, column=0, padx=5)
+
+            # Mostramos gráfica
+            self.canvas_04_rutas = None
+            graficas.secc_04_muestra_grafica(self)
+
+            # Actualizar sección 5 (Costos)
+            # #############################################################################################
+
+            seccion = self.secciones["seccion5"]
+            for widget in seccion.panel_contenido.winfo_children():
+                widget.destroy()
+
+            # Creamos Frame Contenido
+            self.frame_contenido_secc_5 = ctk.CTkFrame(
+                seccion.panel_contenido, fg_color="white"
+            )
+            self.frame_contenido_secc_5.grid(
+                row=0, column=0, sticky="nsew", padx=20, pady=20
+            )
+
+            # Mostramos gráfica
+            self.canvas_05_costos = None
+            graficas.secc_05_muestra_grafica(self)
 
     def on_closing(self):
         """Maneja el cierre limpio de la aplicación"""
@@ -859,6 +1178,8 @@ class Aplicacion(ctk.CTk):
         self.boton_seccion1.configure(state="disabled")
         self.boton_seccion2.configure(state="disabled")
         self.boton_seccion3.configure(state="disabled")
+        self.boton_seccion4.configure(state="disabled")
+        self.boton_seccion5.configure(state="disabled")
 
         # Volver a la sección de inicio
         self.mostrar_inicio()
@@ -879,7 +1200,7 @@ class Aplicacion(ctk.CTk):
 
         # Limpiar gráficas
         if hasattr(self, "secciones"):
-            for seccion in ["seccion1", "seccion2", "seccion3"]:
+            for seccion in ["seccion1", "seccion3", "seccion4"]:
                 if seccion in self.secciones:
                     for widget in self.secciones[
                         seccion

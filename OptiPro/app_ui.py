@@ -266,3 +266,5 @@ class SeccionContenido(ctk.CTkFrame):
     def actualizar_estado(self, mensaje):
         """Actualiza el mensaje de estado en el panel inferior"""
         self.etiqueta_estado.configure(text=mensaje)
+
+
