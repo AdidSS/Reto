@@ -34,6 +34,19 @@ def secc_01_on_poligono_select(app, selected_poligono):
     print(f"Polígono seleccionado: {selected_poligono}")
 
 
+# def secc_02_muestra_grafica(app):
+#     if app.canvas_02_pedidos:
+#         app.canvas_02_pedidos.get_tk_widget().destroy()
+
+#     app.fig_pedidos = sim.plot_pedidos_por_dia(
+#         app.df_pedidos, por=app.secc2_vista_actual
+#     )
+#     app.canvas_02_pedidos = FigureCanvasTkAgg(
+#         app.fig_pedidos, app.frame_contenido_secc_2
+#     )
+#     app.canvas_02_pedidos.draw()
+#     app.canvas_02_pedidos.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
 def secc_02_muestra_grafica(app):
     if app.canvas_02_pedidos:
         app.canvas_02_pedidos.get_tk_widget().destroy()
@@ -45,7 +58,16 @@ def secc_02_muestra_grafica(app):
         app.fig_pedidos, app.frame_contenido_secc_2
     )
     app.canvas_02_pedidos.draw()
-    app.canvas_02_pedidos.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+    # Obtener la altura del parent y calcular el 60%
+    parent_height = app.frame_contenido_secc_2.winfo_height()
+    desired_height = int(parent_height * 0.6)
+
+    # Ajustar la altura del widget
+    canvas_widget = app.canvas_02_pedidos.get_tk_widget()
+    canvas_widget.pack(fill=tk.BOTH, expand=True)
+    canvas_widget.config(height=desired_height)
+
 
 
 def secc_02_on_vista_select(app, selected_vista):

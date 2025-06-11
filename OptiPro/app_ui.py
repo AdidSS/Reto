@@ -268,3 +268,14 @@ class SeccionContenido(ctk.CTkFrame):
         self.etiqueta_estado.configure(text=mensaje)
 
 
+def centrar_ventana(root, ancho, alto):
+    # Obtener el tamaño de la pantalla
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+
+    # Calcular la posición x e y para centrar la ventana
+    x = (screen_width // 2) - (ancho // 2)
+    y = (screen_height // 2) - (alto // 2) - 40
+
+    # Configurar la geometría de la ventana
+    root.geometry(f"{ancho}x{alto}+{x}+{y}")
