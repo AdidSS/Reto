@@ -10,154 +10,218 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
 import plotly.express as px
-warnings.filterwarnings('ignore')
 
-def cargar_parametros_desde_excel(ruta_excel='parametros.xlsx'):
+warnings.filterwarnings("ignore")
+
+
+def cargar_parametros_desde_excel(ruta_excel):
     """
     Carga todos los parámetros desde un archivo Excel con múltiples hojas
-    
+
     Args:
         ruta_excel: Ruta al archivo Excel con las hojas de parámetros
-        
+
     Returns:
         params: Diccionario con todos los parámetros cargados
     """
     params = {}
-    
+
     # 1. Cargar parámetros generales desde la hoja "parametros"
-    df_params = pd.read_excel(ruta_excel, sheet_name='parametros')
-    params['parametros_generales'] = {row[0]: row[1] for _, row in df_params.iterrows()}
-    
+    df_params = pd.read_excel(ruta_excel, sheet_name="parametros")
+    params["parametros_generales"] = {row[0]: row[1] for _, row in df_params.iterrows()}
+
     # Convertir tipos de datos según el tipo esperado
-    for key in ['almacenamiento', 'costo_plantacion', 'dias_anticipacion', 
-                'min_dias_aclimatacion', 'max_dias_aclimatacion', 'dias_simulacion',
-                'velocidad_camioneta', 'tiempo_maximo', 'tiempo_carga', 
-                'carga_maxima', 'capacidad_maxima_transporte', 'costo_transporte']:
-        if key in params['parametros_generales']:
-            if key in ['dias_anticipacion', 'min_dias_aclimatacion', 
-                      'max_dias_aclimatacion', 'dias_simulacion']:
-                params['parametros_generales'][key] = int(params['parametros_generales'][key])
+    for key in [
+        "almacenamiento",
+        "costo_plantacion",
+        "dias_anticipacion",
+        "min_dias_aclimatacion",
+        "max_dias_aclimatacion",
+        "dias_simulacion",
+        "velocidad_camioneta",
+        "tiempo_maximo",
+        "tiempo_carga",
+        "carga_maxima",
+        "capacidad_maxima_transporte",
+        "costo_transporte",
+    ]:
+        if key in params["parametros_generales"]:
+            if key in [
+                "dias_anticipacion",
+                "min_dias_aclimatacion",
+                "max_dias_aclimatacion",
+                "dias_simulacion",
+            ]:
+                params["parametros_generales"][key] = int(
+                    params["parametros_generales"][key]
+                )
             else:
-                params['parametros_generales'][key] = float(params['parametros_generales'][key])
-    
+                params["parametros_generales"][key] = float(
+                    params["parametros_generales"][key]
+                )
+
     # 2. Cargar hectáreas por polígono desde la hoja "hectareas_poligono"
-    df_hectareas = pd.read_excel(ruta_excel, sheet_name='hectareas_poligono')
-    params['hectareas_poligono'] = dict(zip(df_hectareas['poligono'], df_hectareas['hectareas']))
-    
+    df_hectareas = pd.read_excel(ruta_excel, sheet_name="hectareas_poligono")
+    params["hectareas_poligono"] = dict(
+        zip(df_hectareas["poligono"], df_hectareas["hectareas"])
+    )
+
     # 3. Cargar demanda por especie desde la hoja "demanda_especies"
-    df_demanda = pd.read_excel(ruta_excel, sheet_name='demanda_especies')
-    params['demanda_especies_por_hectarea'] = dict(zip(df_demanda['especie'], 
-                                                     df_demanda['demanda_por_hectarea']))
-    
+    df_demanda = pd.read_excel(ruta_excel, sheet_name="demanda_especies")
+    params["demanda_especies_por_hectarea"] = dict(
+        zip(df_demanda["especie"], df_demanda["demanda_por_hectarea"])
+    )
+
     # 4. Cargar costos de proveedores desde la hoja "costos_proveedores"
-    df_costos = pd.read_excel(ruta_excel, sheet_name='costos_proveedores')
-    
+    df_costos = pd.read_excel(ruta_excel, sheet_name="costos_proveedores")
+
     # Extraer nombres de proveedores (de las columnas excluyendo la primera)
-    params['nombres_proveedores'] = df_costos.columns[1:].tolist()
-    
+    params["nombres_proveedores"] = df_costos.columns[1:].tolist()
+
     # Extraer nombres de especies (de la primera columna)
-    params['nombres_especies'] = df_costos.iloc[:, 0].tolist()
-    
+    params["nombres_especies"] = df_costos.iloc[:, 0].tolist()
+
     # Extraer matriz de costos (convertir a float, eliminando la primera columna)
-    params['matriz_costos'] = df_costos.iloc[:, 1:].values.astype(float)
-    
+    params["matriz_costos"] = df_costos.iloc[:, 1:].values.astype(float)
+
     # 5. Cargar distancias entre polígonos desde la hoja "distancias_poligonos"
-    df_distancias = pd.read_excel(ruta_excel, sheet_name='distancias_poligonos', header=None)
-    params['distancias_poligonos'] = df_distancias.values
-    
+    df_distancias = pd.read_excel(
+        ruta_excel, sheet_name="distancias_poligonos", header=None
+    )
+    params["distancias_poligonos"] = df_distancias.values
+
     return params
+
 
 def obtener_parametros_simulacion(params):
     """Extrae e imprime los parámetros generales de simulación y retorna todos los valores necesarios."""
-    parametros_generales = params['parametros_generales']
-    almacenamiento = parametros_generales.get('almacenamiento', 400)
-    espacio_por_planta = parametros_generales.get('espacio_por_planta', 0.04)
+    parametros_generales = params["parametros_generales"]
+    almacenamiento = parametros_generales.get("almacenamiento", 400)
+    espacio_por_planta = parametros_generales.get("espacio_por_planta", 0.04)
     capacidad_maxima_plantas = int(almacenamiento / espacio_por_planta)
-    costo_plantacion = parametros_generales.get('costo_plantacion', 20)
-    dias_anticipacion = parametros_generales.get('dias_anticipacion', 1)
-    min_dias_aclimatacion = parametros_generales.get('min_dias_aclimatacion', 3)
-    max_dias_aclimatacion = parametros_generales.get('max_dias_aclimatacion', 7)
-    dias_simulacion = parametros_generales.get('dias_simulacion', 10)
-    velocidad_camioneta = parametros_generales.get('velocidad_camioneta', 40)
-    tiempo_maximo = parametros_generales.get('tiempo_maximo', 6)
-    tiempo_carga = parametros_generales.get('tiempo_carga', 0.5)
-    carga_maxima = parametros_generales.get('carga_maxima', 524)
-    capacidad_maxima_transporte = parametros_generales.get('capacidad_maxima_transporte', 8000)
-    costo_transporte = parametros_generales.get('costo_transporte', 4500)
-    start_polygon = int(parametros_generales.get('start_polygon', 6))
+    costo_plantacion = parametros_generales.get("costo_plantacion", 20)
+    dias_anticipacion = parametros_generales.get("dias_anticipacion", 1)
+    min_dias_aclimatacion = parametros_generales.get("min_dias_aclimatacion", 3)
+    max_dias_aclimatacion = parametros_generales.get("max_dias_aclimatacion", 7)
+    dias_simulacion = parametros_generales.get("dias_simulacion", 10)
+    velocidad_camioneta = parametros_generales.get("velocidad_camioneta", 40)
+    tiempo_maximo = parametros_generales.get("tiempo_maximo", 6)
+    tiempo_carga = parametros_generales.get("tiempo_carga", 0.5)
+    carga_maxima = parametros_generales.get("carga_maxima", 524)
+    capacidad_maxima_transporte = parametros_generales.get(
+        "capacidad_maxima_transporte", 8000
+    )
+    costo_transporte = parametros_generales.get("costo_transporte", 4500)
+    start_polygon = int(parametros_generales.get("start_polygon", 6))
 
-    #Dataframe con los parámetros de simulación
-    df_parametros_simulacion = pd.DataFrame([{
-        "almacenamiento": almacenamiento,
-        "espacio_por_planta": espacio_por_planta,
-        "capacidad_maxima_plantas": capacidad_maxima_plantas,
-        "costo_plantacion": costo_plantacion,
-        "dias_anticipacion": dias_anticipacion,
-        "min_dias_aclimatacion": min_dias_aclimatacion,
-        "max_dias_aclimatacion": max_dias_aclimatacion,
-        "dias_simulacion": dias_simulacion,
-        "velocidad_camioneta": velocidad_camioneta,
-        "tiempo_maximo": tiempo_maximo,
-        "tiempo_carga": tiempo_carga,
-        "carga_maxima": carga_maxima,
-        "capacidad_maxima_transporte": capacidad_maxima_transporte,
-        "costo_transporte": costo_transporte,
-        "start_polygon": start_polygon
-    }])
+    # Dataframe con los parámetros de simulación
+    df_parametros_simulacion = pd.DataFrame(
+        [
+            {
+                "almacenamiento": almacenamiento,
+                "espacio_por_planta": espacio_por_planta,
+                "capacidad_maxima_plantas": capacidad_maxima_plantas,
+                "costo_plantacion": costo_plantacion,
+                "dias_anticipacion": dias_anticipacion,
+                "min_dias_aclimatacion": min_dias_aclimatacion,
+                "max_dias_aclimatacion": max_dias_aclimatacion,
+                "dias_simulacion": dias_simulacion,
+                "velocidad_camioneta": velocidad_camioneta,
+                "tiempo_maximo": tiempo_maximo,
+                "tiempo_carga": tiempo_carga,
+                "carga_maxima": carga_maxima,
+                "capacidad_maxima_transporte": capacidad_maxima_transporte,
+                "costo_transporte": costo_transporte,
+                "start_polygon": start_polygon,
+            }
+        ]
+    )
     # Se añade el df en los valores que retorna la función
-    return (almacenamiento, espacio_por_planta, capacidad_maxima_plantas, costo_plantacion,
-            dias_anticipacion, min_dias_aclimatacion, max_dias_aclimatacion, dias_simulacion,
-            velocidad_camioneta, tiempo_maximo, tiempo_carga, carga_maxima,
-            capacidad_maxima_transporte, costo_transporte, start_polygon, df_parametros_simulacion)
+    return (
+        almacenamiento,
+        espacio_por_planta,
+        capacidad_maxima_plantas,
+        costo_plantacion,
+        dias_anticipacion,
+        min_dias_aclimatacion,
+        max_dias_aclimatacion,
+        dias_simulacion,
+        velocidad_camioneta,
+        tiempo_maximo,
+        tiempo_carga,
+        carga_maxima,
+        capacidad_maxima_transporte,
+        costo_transporte,
+        start_polygon,
+        df_parametros_simulacion,
+    )
+
 
 def calculate_total_demand(hectareas_poligono, demanda_especies_por_hectarea):
     """Calculate the total demand for each species across all polygons"""
     # Create dictionary to store demand per species per polygon
     polygon_species_demand = {}
-    
+
     # Calculate demand for each polygon based on hectares and species requirements
     for polygon_id, hectares in hectareas_poligono.items():
         polygon_species_demand[polygon_id] = {}
         for species_id, demand_per_hectare in demanda_especies_por_hectarea.items():
             # Calculate demand for this species in this polygon
-            polygon_species_demand[polygon_id][species_id] = round(hectares * demand_per_hectare)
-    
+            polygon_species_demand[polygon_id][species_id] = round(
+                hectares * demand_per_hectare
+            )
+
     # Calculate total demand per species across all polygons
-    total_species_demand = {species_id: 0 for species_id in demanda_especies_por_hectarea.keys()}
+    total_species_demand = {
+        species_id: 0 for species_id in demanda_especies_por_hectarea.keys()
+    }
     for polygon_id, species_demands in polygon_species_demand.items():
         for species_id, demand in species_demands.items():
             total_species_demand[species_id] += demand
-    
+
     return polygon_species_demand, total_species_demand
+
 
 class InventoryManager:
     """Class to manage plant inventory, acclimation and orders"""
-    def __init__(self, demanda_especies_por_hectarea, min_dias_aclimatacion=3, max_dias_aclimatacion=7, capacidad_maxima_plantas=None):
+
+    def __init__(
+        self,
+        demanda_especies_por_hectarea,
+        min_dias_aclimatacion=3,
+        max_dias_aclimatacion=7,
+        capacidad_maxima_plantas=None,
+    ):
         self.inventory = {}  # {species_id: [(quantity, days_in_inventory), ...]}
         self.pending_orders = {}  # {delivery_day: {species_id: quantity}}
         self.current_day = 0
-        self.total_ordered = {species_id: 0 for species_id in demanda_especies_por_hectarea.keys()}
+        self.total_ordered = {
+            species_id: 0 for species_id in demanda_especies_por_hectarea.keys()
+        }
         self.history = []  # Daily inventory snapshots
         self.min_dias_aclimatacion = min_dias_aclimatacion
         self.max_dias_aclimatacion = max_dias_aclimatacion
-        self.capacidad_maxima_plantas = capacidad_maxima_plantas  # NUEVO: capacidad máxima de plantas
+        self.capacidad_maxima_plantas = (
+            capacidad_maxima_plantas  # NUEVO: capacidad máxima de plantas
+        )
         self.inv_logs = []  # Lista para advertencias de inventario
+        self.old_plants_log = []  # Log for old plants removed from inventory
 
     def place_order(self, orders, delivery_day):
         """Place orders with suppliers for delivery on specified day"""
         if delivery_day not in self.pending_orders:
             self.pending_orders[delivery_day] = {}
-        
+
         for species_id, quantity in orders.items():
             if species_id in self.pending_orders[delivery_day]:
                 self.pending_orders[delivery_day][species_id] += quantity
             else:
                 self.pending_orders[delivery_day][species_id] = quantity
-            
+
             # Track total ordered per species
             if species_id in self.total_ordered:
                 self.total_ordered[species_id] += quantity
-    
+
     def receive_deliveries(self, day):
         """Receive any deliveries scheduled for today"""
         inv_logs = []
@@ -166,26 +230,35 @@ class InventoryManager:
                 qty for items in self.inventory.values() for qty, _ in items
             )
             total_a_recibir = sum(self.pending_orders[day].values())
-            if self.capacidad_maxima_plantas is not None and (total_inventario + total_a_recibir) > self.capacidad_maxima_plantas:
+            if (
+                self.capacidad_maxima_plantas is not None
+                and (total_inventario + total_a_recibir) > self.capacidad_maxima_plantas
+            ):
                 espacio_disponible = self.capacidad_maxima_plantas - total_inventario
                 if espacio_disponible <= 0:
-                    self.inv_logs.append({
-                        'day': day,
-                        'tipo': "Inventario lleno",
-                        'valor': dict(self.pending_orders[day])
-                    })
+                    self.inv_logs.append(
+                        {
+                            "day": day,
+                            "tipo": "Inventario lleno",
+                            "valor": dict(self.pending_orders[day]),
+                        }
+                    )
                     del self.pending_orders[day]
                     return
                 total_pedidos = sum(self.pending_orders[day].values())
                 for species_id in list(self.pending_orders[day].keys()):
                     cantidad_original = self.pending_orders[day][species_id]
-                    cantidad_ajustada = int(round(cantidad_original * espacio_disponible / total_pedidos))
+                    cantidad_ajustada = int(
+                        round(cantidad_original * espacio_disponible / total_pedidos)
+                    )
                     self.pending_orders[day][species_id] = max(0, cantidad_ajustada)
-                self.inv_logs.append({
-                    'day': day,
-                    'tipo': "Ajuste de entregas",
-                    'valor': dict(self.pending_orders[day])
-                })
+                self.inv_logs.append(
+                    {
+                        "day": day,
+                        "tipo": "Ajuste de entregas",
+                        "valor": dict(self.pending_orders[day]),
+                    }
+                )
             for species_id, quantity in self.pending_orders[day].items():
                 if quantity <= 0:
                     continue
@@ -195,84 +268,117 @@ class InventoryManager:
                 self.inventory[species_id].append((quantity, 0))
             # Clear processed orders
             del self.pending_orders[day]
-    
+
     def update_inventory(self):
         """Age inventory by one day and take daily snapshot"""
         # Take snapshot before updating
         snapshot = self._get_inventory_snapshot()
         self.history.append(snapshot)
-        
-        # Update age of all plants
-        for species_id in self.inventory:
-            self.inventory[species_id] = [(qty, days + 1) for qty, days in self.inventory[species_id]]
-    
+
+        # Actualizar edad de todas las plantas y separar las viejas
+        for species_id in list(self.inventory.keys()):
+            new_items = []
+            discarded = 0
+            for qty, days in self.inventory[species_id]:
+                new_days = days + 1
+                if new_days > self.max_dias_aclimatacion:
+
+                    discarded += qty  # Desechar plantas viejas
+                else:
+
+                    new_items.append((qty, new_days))
+            if discarded > 0:
+                self.old_plants_log.append(
+                    {
+                        "day": self.current_day + 1,
+                        "species_id": species_id,
+                        "discarded_qty": discarded,
+                    }
+                )
+            self.inventory[species_id] = new_items
+
     def _get_inventory_snapshot(self):
         """Create a snapshot of current inventory state"""
-        snapshot = {
-            'total': {},
-            'available': {},
-            'by_age': {}
-        }
-        
+        snapshot = {"total": {}, "available": {}, "by_age": {}}
+
         for species_id, items in self.inventory.items():
             # Total quantity by species
             total_qty = sum(qty for qty, _ in items)
-            snapshot['total'][species_id] = total_qty
-            
+            snapshot["total"][species_id] = total_qty
+
             # Available quantity (3-7 days)
-            avail_qty = sum(qty for qty, days in items if self.min_dias_aclimatacion <= days <= self.max_dias_aclimatacion)
-            snapshot['available'][species_id] = avail_qty
-            
+            avail_qty = sum(
+                qty
+                for qty, days in items
+                if self.min_dias_aclimatacion <= days <= self.max_dias_aclimatacion
+            )
+            snapshot["available"][species_id] = avail_qty
+
             # Group by days
             by_age = {}
             for qty, days in items:
                 if days not in by_age:
                     by_age[days] = 0
                 by_age[days] += qty
-            snapshot['by_age'][species_id] = by_age
-            
+            snapshot["by_age"][species_id] = by_age
+
         return snapshot
-    
+
     def get_available_inventory(self):
         """Get inventory items available for transport (3-7 days old)"""
         available = {}
         for species_id, items in self.inventory.items():
-            available_qty = sum(qty for qty, days in items if self.min_dias_aclimatacion <= days <= self.max_dias_aclimatacion)
+            available_qty = sum(
+                qty
+                for qty, days in items
+                if self.min_dias_aclimatacion <= days <= self.max_dias_aclimatacion
+            )
             if available_qty > 0:
                 available[species_id] = available_qty
         return available
-    
+
     def get_inventory_summary(self):
         """Get a summary of current inventory"""
         summary = {}
         for species_id, items in self.inventory.items():
             total = sum(qty for qty, _ in items)
-            available = sum(qty for qty, days in items if self.min_dias_aclimatacion <= days <= self.max_dias_aclimatacion)
-            too_young = sum(qty for qty, days in items if days < self.min_dias_aclimatacion)
-            too_old = sum(qty for qty, days in items if days > self.max_dias_aclimatacion)
-            
+            available = sum(
+                qty
+                for qty, days in items
+                if self.min_dias_aclimatacion <= days <= self.max_dias_aclimatacion
+            )
+            too_young = sum(
+                qty for qty, days in items if days < self.min_dias_aclimatacion
+            )
+            too_old = sum(
+                qty for qty, days in items if days > self.max_dias_aclimatacion
+            )
+
             summary[species_id] = {
-                'total': total,
-                'available': available,
-                'too_young': too_young,
-                'too_old': too_old
+                "total": total,
+                "available": available,
+                "too_young": too_young,
+                "too_old": too_old,
             }
         return summary
-    
+
     def remove_from_inventory(self, species_distribution):
         """Remove distributed items from inventory, prioritizing oldest items"""
         for species_id, qty_needed in species_distribution.items():
             if species_id not in self.inventory or qty_needed <= 0:
                 continue
-                
+
             # Sort by age (oldest first)
             self.inventory[species_id].sort(key=lambda x: x[1], reverse=True)
-            
+
             qty_remaining = qty_needed
             new_inventory = []
-            
+
             for qty, days in self.inventory[species_id]:
-                if self.min_dias_aclimatacion <= days <= self.max_dias_aclimatacion and qty_remaining > 0:
+                if (
+                    self.min_dias_aclimatacion <= days <= self.max_dias_aclimatacion
+                    and qty_remaining > 0
+                ):
                     # This batch is available for distribution
                     if qty <= qty_remaining:
                         # Use entire batch
@@ -284,38 +390,42 @@ class InventoryManager:
                 else:
                     # Either not available or no more needed
                     new_inventory.append((qty, days))
-            
+
             self.inventory[species_id] = new_inventory
+
 
 def calculate_route_time(route, dist_poligonos_hrs):
     if len(route) <= 1:
         return 0
-    
+
     total_time = 0
     # Sumar los tiempos de viaje entre polígonos consecutivos
     for i in range(len(route) - 1):
-        total_time += dist_poligonos_hrs[route[i], route[i+1]]
-    
+        total_time += dist_poligonos_hrs[route[i], route[i + 1]]
+
     # Añadir tiempos de carga/descarga (0.5 hrs por polígono visitado) más 0.5 extra
     # Se resta 2 porque no contamos como paradas el polígono inicial y final si son el mismo
     total_time += 0.5 * (len(route) - 2) + 0.5
-    
+
     return total_time
 
+
 def generar_rutas_largas(
-    current_demand, 
-    available_inventory, 
-    dist_poligonos_hrs, 
-    START_POLYGON, 
-    tiempo_maximo, 
-    carga_maxima
+    current_demand,
+    available_inventory,
+    dist_poligonos_hrs,
+    START_POLYGON,
+    tiempo_maximo,
+    carga_maxima,
 ):
     """
     Genera rutas largas: cada ruta intenta visitar el mayor número posible de polígonos,
     repartiendo plantas hasta agotar la carga máxima y el tiempo permitido.
     """
     NUM_POLYGONS = dist_poligonos_hrs.shape[0]
-    poligonos_restantes = [i for i in range(NUM_POLYGONS) if i != START_POLYGON and i in current_demand]
+    poligonos_restantes = [
+        i for i in range(NUM_POLYGONS) if i != START_POLYGON and i in current_demand
+    ]
     rutas = []
 
     while poligonos_restantes:
@@ -329,7 +439,9 @@ def generar_rutas_largas(
         # Intentar agregar el mayor número de polígonos posible a la ruta
         for poligono in poligonos_restantes:
             ruta_provisional = ruta + [poligono] + [START_POLYGON]
-            tiempo_provisional = calculate_route_time(ruta_provisional, dist_poligonos_hrs)
+            tiempo_provisional = calculate_route_time(
+                ruta_provisional, dist_poligonos_hrs
+            )
             if tiempo_provisional > tiempo_maximo:
                 continue
 
@@ -349,7 +461,9 @@ def generar_rutas_largas(
                 poligonos_visitados.append(poligono)
                 carga_restante -= entrega_poligono
                 entrega_total += entrega_poligono
-                tiempo_total = calculate_route_time(ruta + [START_POLYGON], dist_poligonos_hrs)
+                tiempo_total = calculate_route_time(
+                    ruta + [START_POLYGON], dist_poligonos_hrs
+                )
                 # Actualizar inventario temporal
                 for especie, demanda in current_demand[poligono].items():
                     disponible = inventario_tmp.get(especie, 0)
@@ -371,25 +485,30 @@ def generar_rutas_largas(
                 poligonos_restantes.remove(poligono)
         # Actualizar inventario real
         for especie in available_inventory:
-            available_inventory[especie] = inventario_tmp.get(especie, available_inventory[especie])
+            available_inventory[especie] = inventario_tmp.get(
+                especie, available_inventory[especie]
+            )
 
     return rutas
 
+
 def generar_mejores_rutas_greedy(
-    current_demand, 
-    available_inventory, 
-    dist_poligonos_hrs, 
-    START_POLYGON, 
-    tiempo_maximo, 
-    carga_maxima, 
-    max_poligonos=10
+    current_demand,
+    available_inventory,
+    dist_poligonos_hrs,
+    START_POLYGON,
+    tiempo_maximo,
+    carga_maxima,
+    max_poligonos=10,
 ):
     """
     Genera rutas greedy priorizando la máxima entrega de plantas (todas las especies)
     y usando el tiempo de ruta como criterio secundario.
     """
     NUM_POLYGONS = dist_poligonos_hrs.shape[0]
-    poligonos_restantes = [i for i in range(NUM_POLYGONS) if i != START_POLYGON and i in current_demand]
+    poligonos_restantes = [
+        i for i in range(NUM_POLYGONS) if i != START_POLYGON and i in current_demand
+    ]
     rutas = []
 
     while poligonos_restantes:
@@ -400,7 +519,10 @@ def generar_mejores_rutas_greedy(
         # Probar rutas cortas de 1 hasta max_poligonos
         for tam in range(1, min(max_poligonos, len(poligonos_restantes)) + 1):
             # Probar todas las combinaciones posibles de tamaño tam (puedes optimizar usando heurística)
-            for seleccion in [poligonos_restantes[i:i+tam] for i in range(len(poligonos_restantes)-tam+1)]:
+            for seleccion in [
+                poligonos_restantes[i : i + tam]
+                for i in range(len(poligonos_restantes) - tam + 1)
+            ]:
                 ruta = [START_POLYGON] + seleccion + [START_POLYGON]
                 tiempo = calculate_route_time(ruta, dist_poligonos_hrs)
                 if tiempo > tiempo_maximo:
@@ -423,7 +545,10 @@ def generar_mejores_rutas_greedy(
                         break
 
                 # Guardar la mejor ruta (más entrega, menor tiempo)
-                if entrega_total > mejor_entrega or (entrega_total == mejor_entrega and (mejor_tiempo is None or tiempo < mejor_tiempo)):
+                if entrega_total > mejor_entrega or (
+                    entrega_total == mejor_entrega
+                    and (mejor_tiempo is None or tiempo < mejor_tiempo)
+                ):
                     mejor_ruta = ruta
                     mejor_entrega = entrega_total
                     mejor_tiempo = tiempo
@@ -441,7 +566,14 @@ def generar_mejores_rutas_greedy(
 
     return rutas
 
-def calcular_max_plantas_repartibles(tiempo_maximo, tiempo_carga, carga_maxima, min_dias_aclimatacion, max_dias_aclimatacion):
+
+def calcular_max_plantas_repartibles(
+    tiempo_maximo,
+    tiempo_carga,
+    carga_maxima,
+    min_dias_aclimatacion,
+    max_dias_aclimatacion,
+):
     """
     Calcula el máximo de plantas que se pueden repartir en el rango de días útiles.
     """
@@ -451,10 +583,14 @@ def calcular_max_plantas_repartibles(tiempo_maximo, tiempo_carga, carga_maxima, 
     dias_utiles = max_dias_aclimatacion - min_dias_aclimatacion + 1
     return max_viajes_dia * carga_maxima * dias_utiles
 
-def plantas_en_rango_util(inventory, species_id, day, min_dias_aclimatacion, max_dias_aclimatacion):
+
+def plantas_en_rango_util(
+    inventory, species_id, day, min_dias_aclimatacion, max_dias_aclimatacion
+):
     # Plantas en inventario que estarán en rango útil en los próximos días
     en_rango = sum(
-        qty for qty, days in inventory.inventory.get(species_id, [])
+        qty
+        for qty, days in inventory.inventory.get(species_id, [])
         if min_dias_aclimatacion <= days <= max_dias_aclimatacion
     )
     # Pedidos en tránsito que llegarán en el rango útil
@@ -465,18 +601,34 @@ def plantas_en_rango_util(inventory, species_id, day, min_dias_aclimatacion, max
             en_transito += pedidos.get(species_id, 0)
     return en_rango + en_transito
 
+
 def place_orders_with_suppliers(
-    inventory, remaining_demand, matriz_costos, costo_transporte, 
-    capacidad_maxima_transporte, day, delivery_day, 
-    nombres_especies, nombres_proveedores,
-    dias_anticipacion=1, min_dias_aclimatacion=3, max_dias_aclimatacion=7, 
-    tiempo_maximo=6, tiempo_carga=0.5, carga_maxima=524, current_demand=None
+    inventory,
+    remaining_demand,
+    matriz_costos,
+    costo_transporte,
+    capacidad_maxima_transporte,
+    day,
+    delivery_day,
+    nombres_especies,
+    nombres_proveedores,
+    dias_anticipacion=1,
+    min_dias_aclimatacion=3,
+    max_dias_aclimatacion=7,
+    tiempo_maximo=6,
+    tiempo_carga=0.5,
+    carga_maxima=524,
+    current_demand=None,
 ):
     """
     Heurística: Solo pedir lo que se puede repartir en el rango de días útiles.
     """
     max_plantas_rango = calcular_max_plantas_repartibles(
-        tiempo_maximo, tiempo_carga, carga_maxima, min_dias_aclimatacion, max_dias_aclimatacion
+        tiempo_maximo,
+        tiempo_carga,
+        carga_maxima,
+        min_dias_aclimatacion,
+        max_dias_aclimatacion,
     )
 
     # Calcular demanda futura en el rango de días útiles
@@ -492,10 +644,7 @@ def place_orders_with_suppliers(
         demanda_futura = remaining_demand.copy()
 
     # Limitar pedido por especie al máximo que se puede repartir en el rango
-    orders_by_species = {}
-    total_cost = 0
-    total_ordered = 0
-    pedidos_rows = []
+    pedidos_por_especie = {}
 
     for species_id, demand in demanda_futura.items():
         # Plantas que estarán disponibles en el rango útil (inventario + pedidos en tránsito)
@@ -503,11 +652,48 @@ def place_orders_with_suppliers(
             inventory, species_id, day, min_dias_aclimatacion, max_dias_aclimatacion
         )
         pedido = max(0, min(demand, max_plantas_rango) - total_en_rango)
+
+        pedidos_por_especie[species_id] = pedido
+
+    # --- NUEVO: Limitar por capacidad máxima de inventario ---
+    # Calcular plantas totales en inventario y en tránsito
+    total_inventario = sum(
+        qty for items in inventory.inventory.values() for qty, _ in items
+    )
+    total_en_transito = 0
+    for pedidos in inventory.pending_orders.values():
+        total_en_transito += sum(pedidos.values())
+    capacidad_maxima_plantas = inventory.capacidad_maxima_plantas
+    if capacidad_maxima_plantas is not None:
+        espacio_disponible = capacidad_maxima_plantas - (total_inventario + total_en_transito)
+        if espacio_disponible <= 0:
+            # No hay espacio, no pedir nada
+            pedidos_por_especie = {k: 0 for k in pedidos_por_especie}
+        else:
+            total_pedido = sum(pedidos_por_especie.values())
+            if total_pedido > espacio_disponible and total_pedido > 0:
+                factor = espacio_disponible / total_pedido
+                for species_id in pedidos_por_especie:
+                    pedidos_por_especie[species_id] = int(np.floor(pedidos_por_especie[species_id] * factor))
+
+    # Limitar el total de pedidos a capacidad_maxima_transporte
+    total_pedido = sum(pedidos_por_especie.values())
+    if total_pedido > capacidad_maxima_transporte and total_pedido > 0:
+        factor = capacidad_maxima_transporte / total_pedido
+        for species_id in pedidos_por_especie:
+            pedidos_por_especie[species_id] = int(np.floor(pedidos_por_especie[species_id] * factor))
+
+    # Generar pedidos a proveedores
+    orders_by_species = {}
+    pedidos_rows = []
+
+    for species_id, pedido in pedidos_por_especie.items():
+
         if pedido <= 0:
             continue
         species_index = int(species_id) - 1
         if species_index < 0 or species_index >= len(matriz_costos):
-            #print(f"Error: Species ID {species_id} out of range in cost matrix")
+            # print(f"Error: Species ID {species_id} out of range in cost matrix")
             continue
         provider_costs = matriz_costos[species_index]
         min_cost_idx = np.argmin(provider_costs)
@@ -517,17 +703,25 @@ def place_orders_with_suppliers(
         provider_id = min_cost_idx + 1
         orders_by_species[species_id][provider_id] = pedido
         # Registrar pedido para DataFrame
-        especie = nombres_especies[species_index] if species_index < len(nombres_especies) else f"Especie {species_id}"
-        proveedor = nombres_proveedores[min_cost_idx] if min_cost_idx < len(nombres_proveedores) else f"Proveedor {provider_id}"
-        pedidos_rows.append({
-            "dia_pedido": day + 1,
-            "dia_entrega": delivery_day + 1,
-            "especie": especie,
-            "proveedor": proveedor,
-            "cantidad": pedido
-        })
-        total_cost += pedido * min_cost + costo_transporte
-        total_ordered += pedido
+        especie = (
+            nombres_especies[species_index]
+            if species_index < len(nombres_especies)
+            else f"Especie {species_id}"
+        )
+        proveedor = (
+            nombres_proveedores[min_cost_idx]
+            if min_cost_idx < len(nombres_proveedores)
+            else f"Proveedor {provider_id}"
+        )
+        pedidos_rows.append(
+            {
+                "dia_pedido": day + 1,
+                "dia_entrega": delivery_day + 1,
+                "especie": especie,
+                "proveedor": proveedor,
+                "cantidad": pedido,
+            }
+        )
 
     # Registrar pedidos en el inventario
     for species_id, providers in orders_by_species.items():
@@ -536,31 +730,39 @@ def place_orders_with_suppliers(
 
     return orders_by_species, pedidos_rows
 
+
 def distribute_plants_to_routes(inventory, current_demand, routes, carga_maxima):
     """
     Distribuye plantas priorizando especies con más plantas próximas a volverse viejas.
     """
     available_inventory = inventory.get_available_inventory()
     if not available_inventory:
-        inventory.inv_logs.append({
-            'day': inventory.current_day + 1,
-            'tipo': "Inventario vacío",
-            'valor': dict(available_inventory)
-        })
+        inventory.inv_logs.append(
+            {
+                "day": inventory.current_day + 1,
+                "tipo": "Inventario vacío",
+                "valor": dict(available_inventory),
+            }
+        )
         return {}, {}
 
     # 1. Calcular cuántas plantas están próximas a ser viejas por especie
     species_oldness = {}
     for species_id, items in inventory.inventory.items():
         # Prioriza plantas con días = max_dias_aclimatacion-2 o mayores (pero >= min)
-        count = sum(qty for qty, days in items if days >= max(inventory.max_dias_aclimatacion - 2, inventory.min_dias_aclimatacion))
+        count = sum(
+            qty
+            for qty, days in items
+            if days
+            >= max(inventory.max_dias_aclimatacion - 2, inventory.min_dias_aclimatacion)
+        )
         species_oldness[species_id] = count
 
     # 2. Ordenar especies por mayor cantidad de plantas próximas a ser viejas
     sorted_species = sorted(
         available_inventory.keys(),
         key=lambda s: species_oldness.get(s, 0),
-        reverse=True
+        reverse=True,
     )
 
     distribution_plan = {}
@@ -578,9 +780,13 @@ def distribute_plants_to_routes(inventory, current_demand, routes, carga_maxima)
                     demand = current_demand[polygon].get(species_id, 0)
                     if demand > 0 and species_id in available_inventory:
                         available = available_inventory[species_id]
-                        to_deliver = min(demand, available, carga_maxima - route_loads[route_idx])
+                        to_deliver = min(
+                            demand, available, carga_maxima - route_loads[route_idx]
+                        )
                         if to_deliver > 0:
-                            distribution_plan[route_idx][polygon][species_id] = to_deliver
+                            distribution_plan[route_idx][polygon][
+                                species_id
+                            ] = to_deliver
                             available_inventory[species_id] -= to_deliver
                             route_loads[route_idx] += to_deliver
                             if available_inventory[species_id] <= 0:
@@ -598,14 +804,17 @@ def distribute_plants_to_routes(inventory, current_demand, routes, carga_maxima)
     inventory.remove_from_inventory(total_distribution)
     return distribution_plan, route_loads
 
+
 def update_demand_after_distribution(current_demand, distribution_plan):
     """Update remaining demand after plants have been distributed"""
     updated_demand = {}
-    
+
     # Make a deep copy of current demand
     for polygon, species_demands in current_demand.items():
-        updated_demand[polygon] = {species: qty for species, qty in species_demands.items()}
-    
+        updated_demand[polygon] = {
+            species: qty for species, qty in species_demands.items()
+        }
+
     # Subtract distributed plants
     for route_idx, polygon_dist in distribution_plan.items():
         for polygon, species_dist in polygon_dist.items():
@@ -614,31 +823,37 @@ def update_demand_after_distribution(current_demand, distribution_plan):
                     if species_id in updated_demand[polygon]:
                         updated_demand[polygon][species_id] -= qty
                         # Ensure non-negative demand
-                        updated_demand[polygon][species_id] = max(0, updated_demand[polygon][species_id])
-    
+                        updated_demand[polygon][species_id] = max(
+                            0, updated_demand[polygon][species_id]
+                        )
+
     return updated_demand
+
 
 def calculate_demand_coverage(total_species_demand, current_demand):
     """Calculate percentage of demand that has been covered"""
     coverage = {}
-    
+
     # Calculate remaining total demand by species
     remaining_demand = {species_id: 0 for species_id in total_species_demand.keys()}
     for polygon, species_demands in current_demand.items():
         for species_id, qty in species_demands.items():
             if species_id in remaining_demand:
                 remaining_demand[species_id] += qty
-    
+
     # Calculate coverage percentage
     for species_id, total in total_species_demand.items():
         if total > 0:
             coverage[species_id] = 1.0 - (remaining_demand[species_id] / total)
         else:
             coverage[species_id] = 1.0  # No demand means 100% coverage
-    
+
     return coverage
 
-def generar_reporte_diario_df(day, inventory, current_demand, nombres_especies, polygon_species_demand):
+
+def generar_reporte_diario_df(
+    day, inventory, current_demand, nombres_especies, polygon_species_demand
+):
     """
     Genera registros del inventario y demanda diaria por especie y polígono para el día actual.
     En df_cobertura_demanda ahora se muestra la demanda cubierta.
@@ -647,47 +862,75 @@ def generar_reporte_diario_df(day, inventory, current_demand, nombres_especies, 
     inventario_rows = []
     for species_id, info in inv_summary.items():
         species_idx = int(species_id) - 1
-        species_name = nombres_especies[species_idx] if species_idx < len(nombres_especies) else f"Especie {species_id}"
-        inventario_rows.append({
-            "dia": day + 1,
-            "especie": species_name,
-            "total": info['total'],
-            "disponible": info['available'],
-            "muy_joven": info['too_young'],
-            "muy_vieja": info['too_old']
-        })
+        species_name = (
+            nombres_especies[species_idx]
+            if species_idx < len(nombres_especies)
+            else f"Especie {species_id}"
+        )
+        inventario_rows.append(
+            {
+                "dia": day + 1,
+                "especie": species_name,
+                "total": info["total"],
+                "disponible": info["available"],
+                "muy_joven": info["too_young"],
+                "muy_vieja": info["too_old"],
+            }
+        )
     # Demanda cubierta por polígono y especie
     cobertura_rows = []
     for poligono, species_demands in current_demand.items():
         for species_id, demanda_restante in species_demands.items():
             species_idx = int(species_id) - 1
-            species_name = nombres_especies[species_idx] if species_idx < len(nombres_especies) else f"Especie {species_id}"
+            species_name = (
+                nombres_especies[species_idx]
+                if species_idx < len(nombres_especies)
+                else f"Especie {species_id}"
+            )
             demanda_inicial = polygon_species_demand[poligono][species_id]
             demanda_cubierta = demanda_inicial - demanda_restante
-            cobertura_rows.append({
-                "dia": day + 1,
-                "poligono": poligono,
-                "especie": species_name,
-                "demanda_cubierta": demanda_cubierta
-            })
+            porcentaje_cubierto = (demanda_cubierta / demanda_inicial) if demanda_inicial > 0 else 1.0
+            cobertura_rows.append(
+                {
+                    "dia": day + 1,
+                    "poligono": poligono,
+                    "especie": species_name,
+                    "demanda_cubierta": porcentaje_cubierto,
+                    "demanda_total": demanda_inicial
+                }
+            )
     return inventario_rows, cobertura_rows
 
-def registrar_pedidos_df(day, delivery_day, orders_by_species, nombres_especies, nombres_proveedores):
+
+def registrar_pedidos_df(
+    day, delivery_day, orders_by_species, nombres_especies, nombres_proveedores
+):
     """Convierte los pedidos realizados en registros para el DataFrame de pedidos."""
     pedidos_rows = []
     for species_id, providers in orders_by_species.items():
         species_idx = int(species_id) - 1
-        especie = nombres_especies[species_idx] if species_idx < len(nombres_especies) else f"Especie {species_id}"
+        especie = (
+            nombres_especies[species_idx]
+            if species_idx < len(nombres_especies)
+            else f"Especie {species_id}"
+        )
         for provider_id, cantidad in providers.items():
-            proveedor = nombres_proveedores[provider_id - 1] if provider_id - 1 < len(nombres_proveedores) else f"Proveedor {provider_id}"
-            pedidos_rows.append({
-                "dia_pedido": day + 1,
-                "dia_entrega": delivery_day + 1,
-                "especie": especie,
-                "proveedor": proveedor,
-                "cantidad": cantidad
-            })
+            proveedor = (
+                nombres_proveedores[provider_id - 1]
+                if provider_id - 1 < len(nombres_proveedores)
+                else f"Proveedor {provider_id}"
+            )
+            pedidos_rows.append(
+                {
+                    "dia_pedido": day + 1,
+                    "dia_entrega": delivery_day + 1,
+                    "especie": especie,
+                    "proveedor": proveedor,
+                    "cantidad": cantidad,
+                }
+            )
     return pedidos_rows
+
 
 def registrar_distribucion_df(day, distribution_plan, nombres_especies):
     """Convierte el plan de distribución en registros para el DataFrame de distribución."""
@@ -696,28 +939,38 @@ def registrar_distribucion_df(day, distribution_plan, nombres_especies):
         for polygon, species_dist in polygon_dist.items():
             for species_id, qty in species_dist.items():
                 species_idx = int(species_id) - 1
-                especie = nombres_especies[species_idx] if species_idx < len(nombres_especies) else f"Especie {species_id}"
-                distribucion_rows.append({
-                    "dia": day + 1,
-                    "ruta": route_idx + 1,
-                    "poligono": polygon,
-                    "especie": especie,
-                    "cantidad": qty
-                })
+                especie = (
+                    nombres_especies[species_idx]
+                    if species_idx < len(nombres_especies)
+                    else f"Especie {species_id}"
+                )
+                distribucion_rows.append(
+                    {
+                        "dia": day + 1,
+                        "ruta": route_idx + 1,
+                        "poligono": polygon,
+                        "especie": especie,
+                        "cantidad": qty,
+                    }
+                )
     return distribucion_rows
+
 
 def registrar_rutas_df(day, today_route):
     """Convierte las rutas del día en registros para el DataFrame de rutas."""
     rutas_rows = []
     for idx, (ruta, tiempo, entrega) in enumerate(today_route):
-        rutas_rows.append({
-            "dia": day + 1,
-            "ruta": idx + 1,
-            "poligonos": ruta,
-            "tiempo": tiempo,
-            "entrega_total": entrega
-        })
+        rutas_rows.append(
+            {
+                "dia": day + 1,
+                "ruta": idx + 1,
+                "poligonos": ruta,
+                "tiempo": tiempo,
+                "entrega_total": entrega,
+            }
+        )
     return rutas_rows
+
 
 def calcular_costos_solucion_por_dia(
     day,
@@ -725,7 +978,7 @@ def calcular_costos_solucion_por_dia(
     distribucion_rows_dia,
     costo_plantacion,
     costo_transporte,
-    nombres_proveedores
+    nombres_proveedores,
 ):
     """
     Calcula el costo de la solución para un día:
@@ -740,7 +993,9 @@ def calcular_costos_solucion_por_dia(
     proveedores_usados = set()
     if not df_pedidos_dia.empty:
         for proveedor in nombres_proveedores:
-            total = df_pedidos_dia[df_pedidos_dia['proveedor'] == proveedor]['cantidad'].sum()
+            total = df_pedidos_dia[df_pedidos_dia["proveedor"] == proveedor][
+                "cantidad"
+            ].sum()
             if total > 0:
                 costos_proveedores[proveedor] = total
                 proveedores_usados.add(proveedor)
@@ -753,7 +1008,9 @@ def calcular_costos_solucion_por_dia(
 
     # Costo de plantación
     df_distribucion_dia = pd.DataFrame(distribucion_rows_dia)
-    plantas_plantadas = df_distribucion_dia['cantidad'].sum() if not df_distribucion_dia.empty else 0
+    plantas_plantadas = (
+        df_distribucion_dia["cantidad"].sum() if not df_distribucion_dia.empty else 0
+    )
     costo_plantacion_total = plantas_plantadas * costo_plantacion
 
     # Costo de adquisición total (suma de todas las adquisiciones a proveedores)
@@ -768,48 +1025,67 @@ def calcular_costos_solucion_por_dia(
         "costo_transporte": costo_transporte_total,
         "plantacion": costo_plantacion_total,
         "costo_proveedores": costo_proveedores_total,
-        "total": total
+        "total": total,
     }
     # Agregar columnas por proveedor (cantidad de plantas pedidas)
     for proveedor in nombres_proveedores:
         row[f"adquisicion_{proveedor}"] = costos_proveedores.get(proveedor, 0)
     return row
 
+
 def run_simulation(
-    dias_simulacion, dias_anticipacion, min_dias_aclimatacion, max_dias_aclimatacion,
-    hectareas_poligono, demanda_especies_por_hectarea, capacidad_maxima_transporte,
-    costo_transporte, carga_maxima, nombres_especies, nombres_proveedores, 
-    matriz_costos, dist_poligonos_hrs, NUM_POLYGONS, START_POLYGON, tiempo_maximo,
-    capacidad_maxima_plantas, tiempo_carga, costo_plantacion,
-    tipo_ruta="greedy"
+    dias_simulacion,
+    dias_anticipacion,
+    min_dias_aclimatacion,
+    max_dias_aclimatacion,
+    hectareas_poligono,
+    demanda_especies_por_hectarea,
+    capacidad_maxima_transporte,
+    costo_transporte,
+    carga_maxima,
+    nombres_especies,
+    nombres_proveedores,
+    matriz_costos,
+    dist_poligonos_hrs,
+    NUM_POLYGONS,
+    START_POLYGON,
+    tiempo_maximo,
+    capacidad_maxima_plantas,
+    tiempo_carga,
+    costo_plantacion,
+    tipo_ruta="greedy",
 ):
     # Calculate initial demands
     polygon_species_demand, total_species_demand = calculate_total_demand(
-        hectareas_poligono=hectareas_poligono, 
-        demanda_especies_por_hectarea=demanda_especies_por_hectarea
+        hectareas_poligono=hectareas_poligono,
+        demanda_especies_por_hectarea=demanda_especies_por_hectarea,
     )
-    
+
     # Convert total demand to list format for reporting
-    initial_demand_list = [total_species_demand.get(i, 0) for i in range(1, len(nombres_especies) + 1)]
-    
+    initial_demand_list = [
+        total_species_demand.get(i, 0) for i in range(1, len(nombres_especies) + 1)
+    ]
+
     # Create inventory manager
     inventory = InventoryManager(
         demanda_especies_por_hectarea,
         min_dias_aclimatacion=min_dias_aclimatacion,
         max_dias_aclimatacion=max_dias_aclimatacion,
-        capacidad_maxima_plantas=capacidad_maxima_plantas
+        capacidad_maxima_plantas=capacidad_maxima_plantas,
     )
-    
+
     # Daily tracking of orders, routes, and demand fulfillment
     daily_orders = {}
     daily_routes = {}
     daily_distributions = {}
     daily_demand_coverage = []
-    
+
     # Deep copy of initial demand for tracking
-    current_demand = {polygon: {species: qty for species, qty in species_demand.items()} 
-                    for polygon, species_demand in polygon_species_demand.items()}
-    
+    current_demand = {
+        polygon: {species: qty for species, qty in species_demand.items()}
+        for polygon, species_demand in polygon_species_demand.items()
+    }
+
     # Inicializar listas para los DataFrames
     inventario_diario_rows = []
     cobertura_demanda_rows = []
@@ -818,7 +1094,7 @@ def run_simulation(
     rutas_rows = []
     inv_warnings_rows = []
     costos_solucion_rows = []
-    
+
     for day in range(dias_simulacion):
         # 1. Receive any pending deliveries
         inventory.receive_deliveries(day)
@@ -836,8 +1112,12 @@ def run_simulation(
             else:
                 rutas_func = generar_mejores_rutas_greedy
             all_routes = rutas_func(
-                current_demand, available_inventory, dist_poligonos_hrs,
-                START_POLYGON, tiempo_maximo, carga_maxima
+                current_demand,
+                available_inventory,
+                dist_poligonos_hrs,
+                START_POLYGON,
+                tiempo_maximo,
+                carga_maxima,
             )
             if all_routes:
                 rutas_del_dia = []
@@ -856,7 +1136,9 @@ def run_simulation(
                     inventory, current_demand, today_route, carga_maxima
                 )
                 daily_distributions[day] = distribution_plan
-                distribucion_rows_dia = registrar_distribucion_df(day, distribution_plan, nombres_especies)
+                distribucion_rows_dia = registrar_distribucion_df(
+                    day, distribution_plan, nombres_especies
+                )
 
                 # 5. Actualizar demanda restante
                 current_demand = update_demand_after_distribution(
@@ -895,16 +1177,22 @@ def run_simulation(
             # Pedir solo lo necesario para cubrir demanda futura y no sobrepedir
             if remaining_demand:
                 current_orders, pedidos_dia = place_orders_with_suppliers(
-                    inventory, remaining_demand, matriz_costos, costo_transporte, 
-                    capacidad_maxima_transporte, day, delivery_day, 
-                    nombres_especies, nombres_proveedores,
+                    inventory,
+                    remaining_demand,
+                    matriz_costos,
+                    costo_transporte,
+                    capacidad_maxima_transporte,
+                    day,
+                    delivery_day,
+                    nombres_especies,
+                    nombres_proveedores,
                     dias_anticipacion=dias_anticipacion,
                     min_dias_aclimatacion=min_dias_aclimatacion,
                     max_dias_aclimatacion=max_dias_aclimatacion,
                     tiempo_maximo=tiempo_maximo,
                     tiempo_carga=tiempo_carga,
                     carga_maxima=carga_maxima,
-                    current_demand=current_demand
+                    current_demand=current_demand,
                 )
                 daily_orders[day] = (delivery_day, current_orders)
         # Registro de DataFrames diarios
@@ -924,7 +1212,7 @@ def run_simulation(
             distribucion_rows_dia,
             costo_plantacion,
             costo_transporte,
-            nombres_proveedores
+            nombres_proveedores,
         )
         costos_solucion_rows.append(row_costos)
         # 9. Update inventory ages
@@ -944,7 +1232,10 @@ def run_simulation(
     df_rutas = pd.DataFrame(rutas_rows)
     df_inv_warnings = pd.DataFrame(inv_warnings_rows)
     df_costos_solucion = pd.DataFrame(costos_solucion_rows)
-    
+    df_plantas_viejas = pd.DataFrame(inventory.old_plants_log)
+
+
+
     # Return simulation data
     return {
         "df_inventario_diario": df_inventario_diario,
@@ -959,127 +1250,152 @@ def run_simulation(
         "daily_distributions": daily_distributions,
         "daily_demand_coverage": daily_demand_coverage,
         "final_demand": current_demand,
-        "inventory_history": inventory.history
+        "inventory_history": inventory.history,
+        "df_plantas_viejas": df_plantas_viejas
     }
+
+
 # Obtener dataframes:
 def get_simulation_dataframes(simulation_result):
     """
     Extrae los DataFrames de resultados de la simulación.
     """
     return (
-        simulation_result['df_inventario_diario'],
-        simulation_result['df_cobertura_demanda'],
-        simulation_result['df_pedidos'],
-        simulation_result['df_distribucion'],
-        simulation_result['df_rutas'],
-        simulation_result['df_inv_warnings'],
-        simulation_result['df_costos_solucion']
+        simulation_result["df_inventario_diario"],
+        simulation_result["df_cobertura_demanda"],
+        simulation_result["df_pedidos"],
+        simulation_result["df_distribucion"],
+        simulation_result["df_rutas"],
+        simulation_result["df_inv_warnings"],
+        simulation_result["df_costos_solucion"],
+        simulation_result["df_plantas_viejas"]
     )
+
+
 #  VISUALIZACIONES
-#-----------------------------------------------
+# -----------------------------------------------
 # DEMANDA
-def plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, especie, poligono = None):
+def plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, especie, poligono=None):
     """
-    Grafica la demanda cubierta de una especie en un polígono específico a lo largo del tiempo.
-    Si poligono es None, grafica la demanda cubierta de la especie en todos los polígonos.
+    Grafica el porcentaje cubierto de la demanda total por día para una especie específica.
+    Si se proporciona un polígono, se filtra también por él.
+    Si poligono es None, se agregan todos los polígonos para la especie dada.
     Devuelve la figura matplotlib.
     """
-    if poligono:
+    df_cobertura_demanda['especie'] = df_cobertura_demanda['especie'].str.strip()
+
+    # Filtrar por especie (y polígono si aplica)
+    if poligono is not None:
         df = df_cobertura_demanda[
             (df_cobertura_demanda['especie'] == especie) &
             (df_cobertura_demanda['poligono'] == poligono)
         ]
-        fig, ax = plt.subplots(figsize=(8,5))
-        ax.plot(df['dia'], df['demanda_cubierta'], marker='o')
-        ax.set_title(f'Demanda cubierta de {especie} en polígono {poligono} a lo largo del tiempo')
-        ax.set_xlabel('Día')
-        ax.set_ylabel('Demanda cubierta')
-        ax.grid(True)
-        return fig
     else:
-        df = df_cobertura_demanda[df_cobertura_demanda['especie'] == especie]
-        resumen = df.groupby('dia')['demanda_cubierta'].sum().reset_index()
-        fig, ax = plt.subplots(figsize=(8,5))
-        ax.plot(resumen['dia'], resumen['demanda_cubierta'], marker='o')
-        ax.set_title(f'Demanda cubierta de {especie} a lo largo del tiempo')
-        ax.set_xlabel('Día')
-        ax.set_ylabel('Demanda cubierta')
-        ax.grid(True)
-        return fig
+        df = df_cobertura_demanda[
+            df_cobertura_demanda['especie'] == especie
+        ]
+        
+    if df.empty:
+        raise ValueError(f"No hay datos para la especie '{especie}'" + (f" en el polígono {poligono}" if poligono else ""))
 
+    # Calcular porcentaje cubierto por día
+    resumen_series = df.groupby('dia').apply(
+        lambda x: float(
+            (x['demanda_cubierta'] * x['demanda_total']).sum() / x['demanda_total'].sum()
+        ) if x['demanda_total'].sum() > 0 else 1.0
+    )
+    resumen_series.name = 'porcentaje_cubierto'
+    resumen = resumen_series.reset_index()
+    resumen['porcentaje_cubierto'] *= 100  # convertir a porcentaje
+
+    # Crear el gráfico
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(resumen['dia'], resumen['porcentaje_cubierto'], marker='o')
+
+    if poligono is not None:
+        ax.set_title(f"Porcentaje cubierto de {especie} en polígono {poligono}")
+    else:
+        ax.set_title(f"Porcentaje cubierto de {especie} en todos los polígonos")
+
+    ax.set_xlabel("Día")
+    ax.set_ylabel("Demanda cubierta (%)")
+    ax.grid(True)
+    return fig
+ 
 def plot_inventario_diario(df_inventario_diario, especie=None):
     """
     Grafica el inventario total, disponible, muy joven y muy vieja por especie a lo largo del tiempo.
-    Si especie es None, grafica todas las especies en subplots. 
+    Si especie es None, grafica todas las especies en subplots.
     Devuelve la figura matplotlib.
     """
     if especie:
-        df = df_inventario_diario[df_inventario_diario['especie'] == especie]
-        fig, ax = plt.subplots(figsize=(10,6))
-        ax.plot(df['dia'], df['total'], label='Total')
-        ax.plot(df['dia'], df['disponible'], label='Disponible')
-        ax.plot(df['dia'], df['muy_joven'], label='Muy joven')
-        ax.plot(df['dia'], df['muy_vieja'], label='Muy vieja')
-        ax.set_title(f'Inventario diario de {especie}')
-        ax.set_xlabel('Día')
-        ax.set_ylabel('Cantidad')
+        df = df_inventario_diario[df_inventario_diario["especie"] == especie]
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(df["dia"], df["total"], label="Total")
+        ax.plot(df["dia"], df["disponible"], label="Disponible")
+        ax.plot(df["dia"], df["muy_joven"], label="Muy joven")
+        ax.plot(df["dia"], df["muy_vieja"], label="Muy vieja")
+        ax.set_title(f"Inventario diario de {especie}")
+        ax.set_xlabel("Día")
+        ax.set_ylabel("Cantidad")
         ax.legend()
         ax.grid(True)
         return fig
     else:
-        especies = df_inventario_diario['especie'].unique()
-        fig, axs = plt.subplots(len(especies), 1, figsize=(10, 4*len(especies)), sharex=True)
+        especies = df_inventario_diario["especie"].unique()
+        fig, axs = plt.subplots(
+            len(especies), 1, figsize=(10, 4 * len(especies)), sharex=True
+        )
         if len(especies) == 1:
             axs = [axs]
         for ax, esp in zip(axs, especies):
-            df = df_inventario_diario[df_inventario_diario['especie'] == esp]
-            ax.plot(df['dia'], df['total'], label='Total')
-            ax.plot(df['dia'], df['disponible'], label='Disponible')
-            ax.plot(df['dia'], df['muy_joven'], label='Muy joven')
-            ax.plot(df['dia'], df['muy_vieja'], label='Muy vieja')
-            ax.set_title(f'Inventario diario de {esp}')
-            ax.set_ylabel('Cantidad')
+            df = df_inventario_diario[df_inventario_diario["especie"] == esp]
+            ax.plot(df["dia"], df["total"], label="Total")
+            ax.plot(df["dia"], df["disponible"], label="Disponible")
+            ax.plot(df["dia"], df["muy_joven"], label="Muy joven")
+            ax.plot(df["dia"], df["muy_vieja"], label="Muy vieja")
+            ax.set_title(f"Inventario diario de {esp}")
+            ax.set_ylabel("Cantidad")
             ax.legend()
             ax.grid(True)
-        plt.xlabel('Día')
+        plt.xlabel("Día")
         plt.tight_layout()
         return fig
+
 
 def plot_inventario_total_diario_por_especie(df_inventario_diario, especie):
     """
     Grafica el inventario total diario de una especie específica a lo largo del tiempo.
     Devuelve la figura matplotlib.
     """
-    df = df_inventario_diario[df_inventario_diario['especie'] == especie]
-    fig, ax = plt.subplots(figsize=(10,6))
-    ax.plot(df['dia'], df['total'], marker='o', label='Total')
-    ax.set_title(f'Inventario total diario de {especie}')
-    ax.set_xlabel('Día')
-    ax.set_ylabel('Cantidad total de plantas')
+    df = df_inventario_diario[df_inventario_diario["especie"] == especie]
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(df["dia"], df["total"], marker="o", label="Total")
+    ax.set_title(f"Inventario total diario de {especie}")
+    ax.set_xlabel("Día")
+    ax.set_ylabel("Cantidad total de plantas")
     ax.legend()
     ax.grid(True)
     return fig
 
-def plot_pedidos_por_dia(df_pedidos, por='proveedor'):
+
+def plot_pedidos_por_dia(df_pedidos, por="proveedor"):
     """
     Visualiza los pedidos diarios como barras apiladas por proveedor o especie.
     Devuelve la figura matplotlib.
     """
     pivot = df_pedidos.pivot_table(
-        index='dia_pedido', 
-        columns=por, 
-        values='cantidad', 
-        aggfunc='sum', 
-        fill_value=0
+        index="dia_pedido", columns=por, values="cantidad", aggfunc="sum", fill_value=0
     )
-    fig, ax = plt.subplots(figsize=(12,6))
-    pivot.plot(kind='bar', stacked=True, ax=ax)
-    ax.set_title(f'Pedidos diarios por {por}')
-    ax.set_xlabel('Día de pedido')
-    ax.set_ylabel('Cantidad de plantas')
+    fig, ax = plt.subplots(figsize=(12, 6))
+    pivot.plot(kind="bar", stacked=True, ax=ax)
+    ax.set_title(f"Pedidos diarios por {por}")
+    ax.set_xlabel("Día de pedido")
+    ax.set_ylabel("Cantidad de plantas")
     ax.legend(title=por)
     plt.tight_layout()
     return fig
+
 
 def plot_rutas_networkx_por_dia(df_rutas, dia, poligono_coords=None):
     """
@@ -1087,68 +1403,100 @@ def plot_rutas_networkx_por_dia(df_rutas, dia, poligono_coords=None):
     poligono_coords: dict opcional {poligono: (x, y)} para ubicar los nodos.
     Devuelve la figura matplotlib.
     """
-    rutas_dia = df_rutas[df_rutas['dia'] == dia]
+    rutas_dia = df_rutas[df_rutas["dia"] == dia]
     if rutas_dia.empty:
         return None
     G = nx.DiGraph()
     for idx, row in rutas_dia.iterrows():
-        ruta = row['poligonos']
+        ruta = row["poligonos"]
         for i in range(len(ruta) - 1):
-            G.add_edge(ruta[i], ruta[i+1], ruta=row['ruta'])
-    fig, ax = plt.subplots(figsize=(8,6))
+            G.add_edge(ruta[i], ruta[i + 1], ruta=row["ruta"])
+    fig, ax = plt.subplots(figsize=(8, 6))
     if poligono_coords:
         pos = poligono_coords
     else:
         pos = nx.spring_layout(G, seed=42)
-    edge_colors = [G[u][v]['ruta'] for u,v in G.edges()]
-    nx.draw(G, pos, with_labels=True, node_color='lightblue', edge_color=edge_colors, 
-            edge_cmap=plt.cm.tab10, width=2, arrows=True, ax=ax)
+    edge_colors = [G[u][v]["ruta"] for u, v in G.edges()]
+    nx.draw(
+        G,
+        pos,
+        with_labels=True,
+        node_color="lightblue",
+        edge_color=edge_colors,
+        edge_cmap=plt.cm.tab10,
+        width=2,
+        arrows=True,
+        ax=ax,
+    )
     ax.set_title(f"Rutas del día {dia}")
     return fig
+
 
 def plot_costos_totales_por_dia(df_costos_solucion):
     """
     Grafica el costo total de la solución por día.
     Devuelve la figura matplotlib.
     """
-    fig, ax = plt.subplots(figsize=(10,6))
-    ax.plot(df_costos_solucion['dia'], df_costos_solucion['total'], marker='o', color='tab:red')
-    ax.set_title('Costo de la solución por día')
-    ax.set_xlabel('Día')
-    ax.set_ylabel('Costo total')
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(
+        df_costos_solucion["dia"],
+        df_costos_solucion["total"],
+        marker="o",
+        color="tab:red",
+    )
+    ax.set_title("Costo de la solución por día")
+    ax.set_xlabel("Día")
+    ax.set_ylabel("Costo total")
     ax.grid(True)
     plt.tight_layout()
     return fig
+
 
 # Función principal
 def run_simulation_external(archivo):
     # Cargar todos los parámetros desde archivo Excel
     ruta_archivo = os.path.join("escenarios", archivo)
     params = cargar_parametros_desde_excel(ruta_archivo)
-    
+
     # Extraer parámetros generales
     # Con valores por defecto si no están presentes
-    (almacenamiento, espacio_por_planta, capacidad_maxima_plantas, costo_plantacion,
-     dias_anticipacion, min_dias_aclimatacion, max_dias_aclimatacion, dias_simulacion,
-     velocidad_camioneta, tiempo_maximo, tiempo_carga, carga_maxima,
-     capacidad_maxima_transporte, costo_transporte, start_polygon, df_parametros_iniciales) = obtener_parametros_simulacion(params)
-    
+    (
+        almacenamiento,
+        espacio_por_planta,
+        capacidad_maxima_plantas,
+        costo_plantacion,
+        dias_anticipacion,
+        min_dias_aclimatacion,
+        max_dias_aclimatacion,
+        dias_simulacion,
+        velocidad_camioneta,
+        tiempo_maximo,
+        tiempo_carga,
+        carga_maxima,
+        capacidad_maxima_transporte,
+        costo_transporte,
+        start_polygon,
+        df_parametros_iniciales,
+    ) = obtener_parametros_simulacion(params)
+
     # Extraer otros datos
-    hectareas_poligono = params['hectareas_poligono']
-    demanda_especies_por_hectarea = params['demanda_especies_por_hectarea']
-    nombres_especies = params['nombres_especies']
-    nombres_proveedores = params['nombres_proveedores']
-    matriz_costos = params['matriz_costos']
-    
+    hectareas_poligono = params["hectareas_poligono"]
+    demanda_especies_por_hectarea = params["demanda_especies_por_hectarea"]
+    nombres_especies = params["nombres_especies"]
+    nombres_proveedores = params["nombres_proveedores"]
+    matriz_costos = params["matriz_costos"]
+
     # Procesar matriz de distancias
-    distancias_poligonos = params['distancias_poligonos']
+    distancias_poligonos = params["distancias_poligonos"]
     dist_poligonos_hrs = distancias_poligonos / velocidad_camioneta
     dist_poligonos_hrs = np.round(dist_poligonos_hrs, 2)
-    
+
     # Determinar el número total de polígonos
-    NUM_POLYGONS = min(dist_poligonos_hrs.shape[0], max(hectareas_poligono.keys()) + 1)  # +1 para incluir todos los polígonos
+    NUM_POLYGONS = min(
+        dist_poligonos_hrs.shape[0], max(hectareas_poligono.keys()) + 1
+    )  # +1 para incluir todos los polígonos
     START_POLYGON = start_polygon
-    
+
     # Ejecutar simulación con los parámetros cargados
     simulation_results = run_simulation(
         dias_simulacion=dias_simulacion,
@@ -1170,38 +1518,65 @@ def run_simulation_external(archivo):
         capacidad_maxima_plantas=capacidad_maxima_plantas,
         tiempo_carga=tiempo_carga,
         costo_plantacion=costo_plantacion,
-        tipo_ruta="greedy"  # "greedy" o "larga"
+        tipo_ruta="greedy",  # "greedy" o "larga"
     )
     # Obtener los DataFrames de resultados
-    (df_inventario_diario, df_cobertura_demanda, df_pedidos, 
-     df_distribucion, df_rutas, df_inv_warnings, df_costos_solucion) = get_simulation_dataframes(simulation_results)
-    # print(df_parametros_iniciales)
-    # print(df_inventario_diario)
-    # print(df_cobertura_demanda)
-    # print(df_pedidos)
-    # print(df_distribucion)
-    # print(df_rutas)
-    # print(df_inv_warnings)
-    # print(df_costos_solucion)
-    
+    (
+        df_inventario_diario,
+        df_cobertura_demanda,
+        df_pedidos,
+        df_distribucion,
+        df_rutas,
+        df_inv_warnings,
+        df_costos_solucion,
+        df_plantas_viejas,
+    ) = get_simulation_dataframes(simulation_results)
 
-    # Visualizaciones: Cambiar para que al final el usuario pueda elegir qué visualizar
+    print("\n--- Parámetros iniciales ---")
+    print(df_parametros_iniciales)
+
+    print("\n--- Inventario diario ---")
+    print(df_inventario_diario)
+
+    print("\n--- Cobertura de demanda ---")
+    print(df_cobertura_demanda)
+
+    print("\n--- Pedidos realizados ---")
+    print(df_pedidos)
+
+    print("\n--- Distribución de plantas ---")
+    print(df_distribucion)
+
+    print("\n--- Rutas logísticas ---")
+    print(df_rutas)
+
+    print("\n--- Advertencias de inventario ---")
+    print(df_inv_warnings)
+
+    print("\n--- Costos de la solución ---")
+    print(df_costos_solucion)
+
+    print("\n--- Plantas ya existentes ---")
+    print(df_plantas_viejas)
+
+
+       # Visualizaciones: Cambiar para que al final el usuario pueda elegir qué visualizar
 
     # Demandas cubiertas:
-    plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, 'especie 4',5)
-    plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, 'especie 4')
+    plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, "Malus domestica", 5)
+    plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, "Malus domestica")
 
     # Inventario diario:
-    plot_inventario_diario(df_inventario_diario, especie='especie 1')
-    #plot_inventario_diario(df_inventario_diario) #Muchas imagenes, mejor no usarlo
-    #Esta gráfica muestra solo el total, no el desglose por estado de la planta
-    plot_inventario_total_diario_por_especie(df_inventario_diario, 'especie 1') 
+    plot_inventario_diario(df_inventario_diario, especie="Malus domestica ")
+    # plot_inventario_diario(df_inventario_diario) #Muchas imagenes, mejor no usarlo
+    # Esta gráfica muestra solo el total, no el desglose por estado de la planta
+    plot_inventario_total_diario_por_especie(df_inventario_diario, "Malus domestica ")
 
-    #Pedidos
-    plot_pedidos_por_dia(df_pedidos, por='proveedor')
-    plot_pedidos_por_dia(df_pedidos, por='especie')
+    # Pedidos
+    plot_pedidos_por_dia(df_pedidos, por="proveedor")
+    plot_pedidos_por_dia(df_pedidos, por="especie")
 
-    #Rutas
+    # Rutas
     plot_rutas_networkx_por_dia(df_rutas, dia=7)
 
     # Costos totales
@@ -1214,10 +1589,11 @@ def run_simulation_external(archivo):
         "df_inventario_diario": df_inventario_diario,
         "df_pedidos": df_pedidos,
         "df_costos_solucion": df_costos_solucion,
-        "df_rutas": df_rutas
+        "df_rutas": df_rutas,
     }
 
     return resultado
 
+
 if __name__ == "__main__":
-    run_simulation_external("escenario-1.xlsx")
+    run_simulation_external("C:\Workspaces\GitHub\LeonardoDeRegil\Reto\OptiPro\escenarios\escenario-1.xlsx")
