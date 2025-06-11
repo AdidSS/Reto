@@ -1,10 +1,11 @@
 # app.py - Aplicación principal que gestiona la interfaz gráfica y la interacción con el usuario para el sistema de optimización logística OptiPro
 import customtkinter as ctk
 import tkinter as tk
+import pandas as pd
 from tkinter import ttk, filedialog
 from PIL import Image
 import os, sys
-from app_ui import DialogoAcerca, SeccionContenido, ColoresUI
+from app_ui import DialogoAcerca, SeccionContenido, ColoresUI, centrar_ventana
 import simulation_function as sim
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -30,8 +31,11 @@ class Aplicacion(ctk.CTk):
 
         # Configurar ventana
         self.title("OptiPro")
-        self.geometry("1000x600")
+        # self.attributes("1306x708")  # Ajusta el tamaño máximo considerando la barra de tareas
         self.minsize(800, 500)  # Tamaño mínimo para evitar problemas de layout
+
+        # Definir tamaño deseado (por ejemplo, 800x600)
+        centrar_ventana(self, 1306, 658)
 
         # Configurar grid principal de la ventana
         self.grid_rowconfigure(0, weight=1)
@@ -669,53 +673,6 @@ class Aplicacion(ctk.CTk):
         seccion.panel_contenido.grid_rowconfigure(0, weight=1)
         seccion.panel_contenido.grid_columnconfigure(0, weight=1)
 
-        # # Crear frame para controles de navegación en el panel superior
-        # frame_controles = ctk.CTkFrame(
-        #     seccion.marco_notificaciones, fg_color="transparent"
-        # )
-        # frame_controles.grid(row=0, column=0, sticky="e")
-
-        # # Botón anterior
-        # self.btn_anterior = ctk.CTkButton(
-        #     frame_controles,
-        #     text="← Anterior",
-        #     command=self.dia_anterior,
-        #     width=80,
-        #     height=24,
-        #     fg_color=self.color_inactivo,
-        #     hover_color=self.color_hover,
-        #     font=ctk.CTkFont(size=12),
-        #     state="disabled",
-        # )
-        # self.btn_anterior.grid(row=0, column=0, padx=5)
-
-        # # Etiqueta del día actual
-        # self.lbl_dia = ctk.CTkLabel(
-        #     frame_controles,
-        #     text="Día -",
-        #     font=ctk.CTkFont(size=13, weight="bold"),
-        #     text_color=self.color_titulo,
-        # )
-        # self.lbl_dia.grid(row=0, column=1, padx=10)
-
-        # # Botón siguiente
-        # self.btn_siguiente = ctk.CTkButton(
-        #     frame_controles,
-        #     text="Siguiente →",
-        #     command=self.dia_siguiente,
-        #     width=80,
-        #     height=24,
-        #     fg_color=self.color_inactivo,
-        #     hover_color=self.color_hover,
-        #     font=ctk.CTkFont(size=12),
-        #     state="disabled",
-        # )
-        # self.btn_siguiente.grid(row=0, column=2, padx=5)
-
-        # # Inicializar variables de control
-        # self.dia_actual = 0
-        # self.total_dias = 0
-
     def dia_anterior(self):
         """Navega al día anterior"""
         if self.dia_actual > 0:
@@ -900,6 +857,23 @@ class Aplicacion(ctk.CTk):
             # Obtenemos Rutas
             self.df_rutas = self.simulation_data["df_rutas"]
 
+            # Dias Simulacion
+            self.int_dias_simulacion = self.simulation_data["int_dias_simulacion"]
+
+            # Parámetros Generales
+            self.dict_parametros_generales = self.simulation_data[
+                "dict_parametros_generales"
+            ]
+
+            # Actualizar home con parámetros generales
+            # #############################################################################################
+            
+            # Mostrar los parámetros generales en consola
+            self.consola.insert(tk.END, f"== PARÁMETROS ==\n")
+            for key, value in self.dict_parametros_generales.items():
+                self.consola.insert(tk.END, f"{key:<28}: {value}\n")
+            self.consola.see(tk.END)  # Scroll al final
+
             # Actualizar sección 1 (Demanda)
             # #############################################################################################
 
@@ -959,6 +933,11 @@ class Aplicacion(ctk.CTk):
             # Falores iniciales
             self.poligono_actual = None  # Todos
 
+            # Mostramos tabla
+            tablas.mostrar_dataframe(
+                self.df_cobertura_demanda, self.frame_contenido_secc_1
+            )
+
             # Mostramos gráfica
             self.canvas_01_demanda = None
             graficas.secc_01_muestra_grafica(self)
@@ -999,17 +978,12 @@ class Aplicacion(ctk.CTk):
             # Valores iniciales
             self.secc2_vista_actual = "especie"
 
+            # Mostramos tabla
+            tablas.mostrar_dataframe(self.df_pedidos, self.frame_contenido_secc_2)
+
             # Mostramos gráfica
             self.canvas_02_pedidos = None
             graficas.secc_02_muestra_grafica(self)
-
-            # Mostramos tabla
-            # secc2_tabla_frame = ttk.LabelFrame(
-            #     self.frame_contenido_secc_2, text="Datos"
-            # )
-            # secc2_tabla_frame.pack(padx=10, pady=5, fill="x")            
-            # tablas.mostrar_dataframe_en_tkinter(self.df_pedidos, secc2_tabla_frame)
-
 
             # Actualizar sección 3 (Inventario)
             # #############################################################################################
@@ -1049,6 +1023,11 @@ class Aplicacion(ctk.CTk):
             # Valores iniciales
             self.secc3_especie_actual = self.lst_nombres_especies[0]
 
+            # Mostramos tabla
+            tablas.mostrar_dataframe(
+                self.df_inventario_diario, self.frame_contenido_secc_3
+            )
+
             # Mostramos gráfica
             self.canvas_03_inventario = None
             graficas.secc_03_muestra_grafica(self)
@@ -1082,12 +1061,15 @@ class Aplicacion(ctk.CTk):
             secc4_dia_spinbox = ttk.Spinbox(
                 secc4_dia_frame,
                 from_=1,  # Minimum value
-                to=31,  # Maximum value
+                to=self.int_dias_simulacion,  # Maximum value
                 textvariable=self.secc4_dia_var,  # Link to a Tkinter variable
                 wrap=True,  # If True, increments/decrements wrap around (e.g., 31 to 1)
                 width=5,  # Adjust width as needed
             )
             secc4_dia_spinbox.grid(row=0, column=0, padx=5)
+
+            # Mostramos tabla
+            tablas.mostrar_dataframe(self.df_rutas, self.frame_contenido_secc_4)
 
             # Mostramos gráfica
             self.canvas_04_rutas = None
@@ -1106,6 +1088,11 @@ class Aplicacion(ctk.CTk):
             )
             self.frame_contenido_secc_5.grid(
                 row=0, column=0, sticky="nsew", padx=20, pady=20
+            )
+
+            # Mostramos tabla
+            tablas.mostrar_dataframe(
+                self.df_costos_solucion, self.frame_contenido_secc_5
             )
 
             # Mostramos gráfica

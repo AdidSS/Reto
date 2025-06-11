@@ -665,7 +665,9 @@ def place_orders_with_suppliers(
         total_en_transito += sum(pedidos.values())
     capacidad_maxima_plantas = inventory.capacidad_maxima_plantas
     if capacidad_maxima_plantas is not None:
-        espacio_disponible = capacidad_maxima_plantas - (total_inventario + total_en_transito)
+        espacio_disponible = capacidad_maxima_plantas - (
+            total_inventario + total_en_transito
+        )
         if espacio_disponible <= 0:
             # No hay espacio, no pedir nada
             pedidos_por_especie = {k: 0 for k in pedidos_por_especie}
@@ -674,14 +676,18 @@ def place_orders_with_suppliers(
             if total_pedido > espacio_disponible and total_pedido > 0:
                 factor = espacio_disponible / total_pedido
                 for species_id in pedidos_por_especie:
-                    pedidos_por_especie[species_id] = int(np.floor(pedidos_por_especie[species_id] * factor))
+                    pedidos_por_especie[species_id] = int(
+                        np.floor(pedidos_por_especie[species_id] * factor)
+                    )
 
     # Limitar el total de pedidos a capacidad_maxima_transporte
     total_pedido = sum(pedidos_por_especie.values())
     if total_pedido > capacidad_maxima_transporte and total_pedido > 0:
         factor = capacidad_maxima_transporte / total_pedido
         for species_id in pedidos_por_especie:
-            pedidos_por_especie[species_id] = int(np.floor(pedidos_por_especie[species_id] * factor))
+            pedidos_por_especie[species_id] = int(
+                np.floor(pedidos_por_especie[species_id] * factor)
+            )
 
     # Generar pedidos a proveedores
     orders_by_species = {}
@@ -889,14 +895,16 @@ def generar_reporte_diario_df(
             )
             demanda_inicial = polygon_species_demand[poligono][species_id]
             demanda_cubierta = demanda_inicial - demanda_restante
-            porcentaje_cubierto = (demanda_cubierta / demanda_inicial) if demanda_inicial > 0 else 1.0
+            porcentaje_cubierto = (
+                (demanda_cubierta / demanda_inicial) if demanda_inicial > 0 else 1.0
+            )
             cobertura_rows.append(
                 {
                     "dia": day + 1,
                     "poligono": poligono,
                     "especie": species_name,
                     "demanda_cubierta": porcentaje_cubierto,
-                    "demanda_total": demanda_inicial
+                    "demanda_total": demanda_inicial,
                 }
             )
     return inventario_rows, cobertura_rows
@@ -1234,8 +1242,6 @@ def run_simulation(
     df_costos_solucion = pd.DataFrame(costos_solucion_rows)
     df_plantas_viejas = pd.DataFrame(inventory.old_plants_log)
 
-
-
     # Return simulation data
     return {
         "df_inventario_diario": df_inventario_diario,
@@ -1251,7 +1257,7 @@ def run_simulation(
         "daily_demand_coverage": daily_demand_coverage,
         "final_demand": current_demand,
         "inventory_history": inventory.history,
-        "df_plantas_viejas": df_plantas_viejas
+        "df_plantas_viejas": df_plantas_viejas,
     }
 
 
@@ -1268,49 +1274,57 @@ def get_simulation_dataframes(simulation_result):
         simulation_result["df_rutas"],
         simulation_result["df_inv_warnings"],
         simulation_result["df_costos_solucion"],
-        simulation_result["df_plantas_viejas"]
+        simulation_result["df_plantas_viejas"],
     )
 
 
 #  VISUALIZACIONES
 # -----------------------------------------------
 # DEMANDA
-def plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, especie, poligono=None):
+def plot_demanda_cubierta_por_especie_poligono(
+    df_cobertura_demanda, especie, poligono=None
+):
     """
     Grafica el porcentaje cubierto de la demanda total por día para una especie específica.
     Si se proporciona un polígono, se filtra también por él.
     Si poligono es None, se agregan todos los polígonos para la especie dada.
     Devuelve la figura matplotlib.
     """
-    df_cobertura_demanda['especie'] = df_cobertura_demanda['especie'].str.strip()
+    df_cobertura_demanda["especie"] = df_cobertura_demanda["especie"].str.strip()
 
     # Filtrar por especie (y polígono si aplica)
     if poligono is not None:
         df = df_cobertura_demanda[
-            (df_cobertura_demanda['especie'] == especie) &
-            (df_cobertura_demanda['poligono'] == poligono)
+            (df_cobertura_demanda["especie"] == especie)
+            & (df_cobertura_demanda["poligono"] == poligono)
         ]
     else:
-        df = df_cobertura_demanda[
-            df_cobertura_demanda['especie'] == especie
-        ]
-        
+        df = df_cobertura_demanda[df_cobertura_demanda["especie"] == especie]
+
     if df.empty:
-        raise ValueError(f"No hay datos para la especie '{especie}'" + (f" en el polígono {poligono}" if poligono else ""))
+        raise ValueError(
+            f"No hay datos para la especie '{especie}'"
+            + (f" en el polígono {poligono}" if poligono else "")
+        )
 
     # Calcular porcentaje cubierto por día
-    resumen_series = df.groupby('dia').apply(
-        lambda x: float(
-            (x['demanda_cubierta'] * x['demanda_total']).sum() / x['demanda_total'].sum()
-        ) if x['demanda_total'].sum() > 0 else 1.0
+    resumen_series = df.groupby("dia").apply(
+        lambda x: (
+            float(
+                (x["demanda_cubierta"] * x["demanda_total"]).sum()
+                / x["demanda_total"].sum()
+            )
+            if x["demanda_total"].sum() > 0
+            else 1.0
+        )
     )
-    resumen_series.name = 'porcentaje_cubierto'
+    resumen_series.name = "porcentaje_cubierto"
     resumen = resumen_series.reset_index()
-    resumen['porcentaje_cubierto'] *= 100  # convertir a porcentaje
+    resumen["porcentaje_cubierto"] *= 100  # convertir a porcentaje
 
     # Crear el gráfico
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(resumen['dia'], resumen['porcentaje_cubierto'], marker='o')
+    ax.plot(resumen["dia"], resumen["porcentaje_cubierto"], marker="o")
 
     if poligono is not None:
         ax.set_title(f"Porcentaje cubierto de {especie} en polígono {poligono}")
@@ -1321,7 +1335,8 @@ def plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, especie, po
     ax.set_ylabel("Demanda cubierta (%)")
     ax.grid(True)
     return fig
- 
+
+
 def plot_inventario_diario(df_inventario_diario, especie=None):
     """
     Grafica el inventario total, disponible, muy joven y muy vieja por especie a lo largo del tiempo.
@@ -1559,11 +1574,12 @@ def run_simulation_external(archivo):
     print("\n--- Plantas ya existentes ---")
     print(df_plantas_viejas)
 
-
-       # Visualizaciones: Cambiar para que al final el usuario pueda elegir qué visualizar
+    # Visualizaciones: Cambiar para que al final el usuario pueda elegir qué visualizar
 
     # Demandas cubiertas:
-    plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, "Malus domestica", 5)
+    plot_demanda_cubierta_por_especie_poligono(
+        df_cobertura_demanda, "Malus domestica", 5
+    )
     plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, "Malus domestica")
 
     # Inventario diario:
@@ -1590,10 +1606,13 @@ def run_simulation_external(archivo):
         "df_pedidos": df_pedidos,
         "df_costos_solucion": df_costos_solucion,
         "df_rutas": df_rutas,
+        "int_dias_simulacion": dias_simulacion,
+        "dict_parametros_generales": params["parametros_generales"]
     }
+
 
     return resultado
 
 
 if __name__ == "__main__":
-    run_simulation_external("C:\Workspaces\GitHub\LeonardoDeRegil\Reto\OptiPro\escenarios\escenario-1.xlsx")
+    run_simulation_external("escenario-1.xlsx")
