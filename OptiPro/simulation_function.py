@@ -1577,16 +1577,14 @@ def run_simulation_external(archivo):
     # Visualizaciones: Cambiar para que al final el usuario pueda elegir qué visualizar
 
     # Demandas cubiertas:
-    plot_demanda_cubierta_por_especie_poligono(
-        df_cobertura_demanda, "Malus domestica", 5
-    )
-    plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, "Malus domestica")
+    # plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, "Malus domestica", 5)
+    #plot_demanda_cubierta_por_especie_poligono(df_cobertura_demanda, "Malus domestica")
 
     # Inventario diario:
-    plot_inventario_diario(df_inventario_diario, especie="Malus domestica ")
+    # plot_inventario_diario(df_inventario_diario, especie="Malus domestica ")
     # plot_inventario_diario(df_inventario_diario) #Muchas imagenes, mejor no usarlo
     # Esta gráfica muestra solo el total, no el desglose por estado de la planta
-    plot_inventario_total_diario_por_especie(df_inventario_diario, "Malus domestica ")
+    # plot_inventario_total_diario_por_especie(df_inventario_diario, "Malus domestica ")
 
     # Pedidos
     plot_pedidos_por_dia(df_pedidos, por="proveedor")
